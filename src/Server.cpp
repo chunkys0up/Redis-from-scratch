@@ -7,6 +7,35 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <thread>
+
+void handle_client(int client_fd ) {
+  //int client_socket = *(int*)arg;
+  //free(arg);
+  
+  char buffer[1024] = { 0 };
+
+  while (1) {
+    ssize_t bytes_read = read(client_fd, buffer, sizeof(buffer));
+
+    if (bytes_read <= 0) {
+      std::cerr << "bytes_read <= 0: Client Disconnecting\n";
+      close(client_fd);
+      return;
+    }
+
+    std::string request(buffer);
+    // found the keyboard PING
+    if (request.find("PING") != std::string::npos) {
+      std::string response = "+PONG\r\n";
+      send(client_fd, response.c_str(), response.size(), 0);
+    } else {
+        std::cerr << "request doesn't contain `PING`: Client disconnecting\n";
+        close(client_fd);
+        return;
+    }
+  }
+}
 
 int main(int argc, char** argv) {
   // Flush after every std::cout / std::cerr
@@ -52,25 +81,20 @@ int main(int argc, char** argv) {
   int client_fd = accept(server_fd, (struct sockaddr*)&client_addr, (socklen_t*)&client_addr_len);
   std::cout << "Client connected\n";
 
-  char buffer[1024] = { 0 };
+
+  socklen_t server_addr_len = sizeof(server_addr);
+  int new_socket;
+
   while (1) {
-    int bytes_read = read(client_fd, buffer, sizeof(buffer));
+    // accept a new client
+    new_socket = accept(server_fd, (struct sockaddr*)&server_addr, &server_addr_len);
+    std::thread client_thread(handle_client, client_fd);
+    
+    // detach thread
+    client_thread.detach();
 
-    if (bytes_read < 0) {
-      std::cout << "Failed to read\n";
-      return 1;
-    }
-
-    std::string request(buffer);
-    // found the keyboard PING
-    if (request.find("PING") != std::string::npos) {
-      std::string response = "+PONG\r\n";
-      send(client_fd, response.c_str(), response.size(), 0);
-    }
   }
 
-
-  close(client_fd);
   close(server_fd);
 
   return 0;
