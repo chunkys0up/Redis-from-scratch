@@ -1,13 +1,20 @@
-#include <iostream>
 #include "redis_parser.hpp"
-#include <cstring>
+
+// sending from sockets & closing it
 #include <sys/socket.h>
 #include <unistd.h>
+
+// to convert to lowercase
 #include <cctype>
 #include <algorithm>
 #include <vector>
 
+// for SET and GET
+#include <unordered_map>
 using namespace std;
+
+// global variable for SET and GET
+unordered_map<string, string> redisMap;
 
 string resp_bulk_string(const string& data) {
     return "$" + to_string(data.size()) + "\r\n" + data + "\r\n";
@@ -57,8 +64,10 @@ vector<string> parse_resp_array(const string& input) {
     return result;
 }
 
+// Command line
 void parse_redis_command(char* buffer, int client_fd) {
     string request(buffer);
+    string response;
 
     vector<string> tokens = parse_resp_array(request);
     if (tokens.empty()) {
@@ -69,20 +78,40 @@ void parse_redis_command(char* buffer, int client_fd) {
 
     // check if ping
     if (tokens[0] == "PING") {
-        string response = "+PONG\r\n";
+        response = "+PONG\r\n";
         send(client_fd, response.c_str(), response.size(), 0);
         return;
     }
 
-    // now check for echo
-    if (to_lower(tokens[0]) == "echo") {
-        string response = "";
-        for (size_t i = 1;i < tokens.size();i++)
-            response += resp_bulk_string(tokens[i]);
+    // now check for echo (echo can only have 2 tokens, 1: echo, 2: msg)
+    if (tokens.size() == 2 && to_lower(tokens[0]) == "echo") {
+        response = resp_bulk_string(tokens[1]);
+        
+        send(client_fd, response.c_str(), response.size(), 0);
+        return;
+    }
+
+    // check for SET
+    if(tokens[0] == "SET" && tokens.size() == 3) {
+        redisMap[tokens[1]] = tokens[2];
+        response = "+OK\r\n";
+
+        send(client_fd, reponse.c_str(), response.size(), 0);
+        return;
+    }
+
+    // check for GET
+    if(tokens[0] == "GET" && tokens.size() == 2) {
+        response = "$-1\r\n";
+
+        if(redisMap.find(tokens[1]) != redisMap.end()) {
+            response = resp_bulk_string(tokens[1]);
+        } 
 
         send(client_fd, response.c_str(), response.size(), 0);
         return;
     }
+
 
     std::cerr << "Uknown command: " << tokens[0] << "\n";
     close(client_fd);

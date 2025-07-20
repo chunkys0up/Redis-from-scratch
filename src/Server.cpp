@@ -8,7 +8,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <thread>
-#include "redis_parser.hpp"
+#include "commands/redis_parser.hpp"
 
 
 void handle_client(int client_fd) {
