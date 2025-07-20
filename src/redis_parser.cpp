@@ -3,6 +3,8 @@
 #include <string>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <cctype>
+#include <algorithm>
 
 using namespace std;
 
@@ -10,42 +12,72 @@ string resp_bulk_string(const string& data) {
     return "$" + to_string(data.size()) + "\r\n" + data + "\r\n";
 }
 
-void parse_redis_command(char* buffer, ssize_t buffer_size, int client_fd) {
-    string request(buffer);
+string to_lower(const string& token) {
+    string res = token;
+    transform(res.begin(), res.end(), res.begin(), ::tolower);
+    return res;
+}
 
-    cout << request << "\n";
+vector<string> parse_resp_array(const string& input) {
+    vector<string> result;
+    size_t i = 0;
 
-    string copy = request;
-    for (char& c : copy)
-        c = tolower(static_cast<unsigned char>(c));
+    if(input[i] != '*') return result;
 
-    if (copy.find("echo") != string::npos) {
-        // isolate the text after
-        int index = 0;
-        string cap = "";
-        while (cap.find("echo") == string::npos) {
-            cap += copy[index];
-            index++;
+    // test with this command *2\r\n$4\r\nECHO\r\n$3\r\nhey\r\n
+
+    // Expect '$4\r\nECHO\r\n'
+    while(input[i] != '\n') i++;
+    i++;
+
+    // get multiple elements if needed
+    while(i < input.size()) {
+        if(input[i] != '$') break;
+        i++;
+
+        // parse length
+        int len = 0;
+        while(isdigit(input[i])) {
+            len = len * 10 + (input[i] - '0');
+            i++;
         }
 
-        cout << "To Send: " << request.substr(index, request.length() - index) << "\n";
+        // skip \r\n
+        i += 2;
 
-        string response = resp_bulk_string(request.substr(index, request.length() - index));
+        //extract the string of length len
+        string arg = input.substr(i, len);
+        result.push_back(arg);
 
-        cout << "echo encode: " << response << "\n";
-        send(client_fd, response.c_str(), response.size(), 0);
+        // skip string + \r\n
+        i += len + 2;
     }
-    else if (copy.find("PING") != string::npos) {
+
+    return result;
+}
+
+void parse_redis_command(char* buffer, int client_fd) {
+    string request(buffer);
+
+    vector<string> tokens = parse_resp_array(request);
+
+    // check if echo
+    if(strcmp(tokens[0], "PING") == 0) {
         string response = "+PONG\r\n";
         send(client_fd, response.c_str(), response.size(), 0);
-    }
-    else {
-        std::cerr << "request doesn't contain `PING`: Client disconnecting\n";
-        close(client_fd);
         return;
     }
 
+    // now check for echo
+    if(strcmp(to_lower(tokens[0], "echo") == 0)) {
+        string response = "";
+        for(const auto& token : tokens)
+            response += resp_bulk_string(token);
 
+        send(client_fd, response.c_str(), response.size(), 0);
+        return;
+    }
+
+    std::cerr << "request doesn't contain `PING`: Client disconnecting\n";
+    close(client_fd);
 }
-
-

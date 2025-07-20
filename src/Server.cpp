@@ -23,7 +23,7 @@ void handle_client(int client_fd) {
       return;
     }
 
-    parse_redis_command(buffer, sizeof(buffer), client_fd);
+    parse_redis_command(buffer, client_fd);
   }
 }
 
