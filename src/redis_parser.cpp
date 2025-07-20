@@ -78,7 +78,7 @@ void parse_redis_command(char* buffer, int client_fd) {
     if (to_lower(tokens[0]) == "echo") {
         string response = "";
         for (size_t i = 1;i < tokens.size();i++)
-            repsonse += resp_bulk_string(tokens[i]);
+            response += resp_bulk_string(tokens[i]);
 
         send(client_fd, response.c_str(), response.size(), 0);
         return;
