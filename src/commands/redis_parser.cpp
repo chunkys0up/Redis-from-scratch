@@ -92,7 +92,7 @@ void parse_redis_command(char* buffer, int client_fd) {
     }
 
     // check for SET
-    if(tokens[0] == "SET" && tokens.size() == 3) {
+    if(tokens[0] == "SET") {
         redisMap[tokens[1]] = tokens[2];
         response = "+OK\r\n";
 
@@ -101,7 +101,7 @@ void parse_redis_command(char* buffer, int client_fd) {
     }
 
     // check for GET
-    if(tokens[0] == "GET" && tokens.size() == 2) {
+    if(tokens[0] == "GET") {
         response = "$-1\r\n";
 
         if(redisMap.find(tokens[1]) != redisMap.end()) {
