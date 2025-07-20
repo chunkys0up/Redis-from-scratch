@@ -1,5 +1,5 @@
 #include "redis_parser.hpp"
-
+#include <iostream>
 // sending from sockets & closing it
 #include <sys/socket.h>
 #include <unistd.h>
@@ -96,7 +96,7 @@ void parse_redis_command(char* buffer, int client_fd) {
         redisMap[tokens[1]] = tokens[2];
         response = "+OK\r\n";
 
-        send(client_fd, reponse.c_str(), response.size(), 0);
+        send(client_fd, response.c_str(), response.size(), 0);
         return;
     }
 
