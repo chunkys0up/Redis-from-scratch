@@ -28,10 +28,11 @@ void parse_redis_command(char* buffer, ssize_t buffer_size, int client_fd) {
             index++;
         }
 
+        cout << "To Send: " << request.substr(index, request.length() - index) << "\n";
+
         string response = resp_bulk_string(request.substr(index, request.length() - index));
 
         cout << "echo encode: " << response << "\n";
-
         send(client_fd, response.c_str(), response.size(), 0);
     }
     else if (copy.find("PING") != string::npos) {
