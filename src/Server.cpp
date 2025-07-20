@@ -72,22 +72,12 @@ int main(int argc, char** argv) {
     return 1;
   }
 
-  struct sockaddr_in client_addr;
-  int client_addr_len = sizeof(client_addr);
-  std::cout << "Waiting for a client to connect...\n";
-
-
-  std::cout << "Logs from your program will appear here!\n";
-  int client_fd = accept(server_fd, (struct sockaddr*)&client_addr, (socklen_t*)&client_addr_len);
-  std::cout << "Client connected\n";
-
-
   socklen_t server_addr_len = sizeof(server_addr);
-  int new_socket;
+  int client_fd;
 
   while (1) {
     // accept a new client
-    new_socket = accept(server_fd, (struct sockaddr*)&server_addr, &server_addr_len);
+    client_fd = accept(server_fd, (struct sockaddr*)&server_addr, &server_addr_len);
     std::thread client_thread(handle_client, client_fd);
     
     // detach thread
