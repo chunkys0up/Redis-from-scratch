@@ -67,7 +67,7 @@ vector<string> parse_resp_array(const string& input) {
 // Command line
 void parse_redis_command(char* buffer, int client_fd) {
     string request(buffer);
-    string response;
+    string response = "";
 
     vector<string> tokens = parse_resp_array(request);
     if (tokens.empty()) {
@@ -108,7 +108,7 @@ void parse_redis_command(char* buffer, int client_fd) {
             response = resp_bulk_string(tokens[1]);
         } 
 
-        cout << reponse << "\n";
+        cout << response << "\n";
 
         send(client_fd, response.c_str(), response.size(), 0);
         return;
