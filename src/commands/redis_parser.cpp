@@ -14,7 +14,7 @@
 using namespace std;
 
 // global variable for SET and GET
-unordered_map<string, string> redisMap;
+// unordered_map<string, string> redisMap;
 
 string resp_bulk_string(const string& data) {
     return "$" + to_string(data.size()) + "\r\n" + data + "\r\n";
