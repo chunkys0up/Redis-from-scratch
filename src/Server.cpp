@@ -8,11 +8,10 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <thread>
+#include "redis_parser.hpp"
 
-void handle_client(int client_fd ) {
-  //int client_socket = *(int*)arg;
-  //free(arg);
-  
+
+void handle_client(int client_fd) {
   char buffer[1024] = { 0 };
 
   while (1) {
@@ -24,16 +23,7 @@ void handle_client(int client_fd ) {
       return;
     }
 
-    std::string request(buffer);
-    // found the keyboard PING
-    if (request.find("PING") != std::string::npos) {
-      std::string response = "+PONG\r\n";
-      send(client_fd, response.c_str(), response.size(), 0);
-    } else {
-        std::cerr << "request doesn't contain `PING`: Client disconnecting\n";
-        close(client_fd);
-        return;
-    }
+    parse_redis_command(buffer, sizeof(buffer), client_fd);
   }
 }
 
@@ -79,7 +69,7 @@ int main(int argc, char** argv) {
     // accept a new client
     client_fd = accept(server_fd, (struct sockaddr*)&server_addr, &server_addr_len);
     std::thread client_thread(handle_client, client_fd);
-    
+
     // detach thread
     client_thread.detach();
 
