@@ -5,7 +5,7 @@
 #include <string>
 
 // for GET and SET commands
-inline unordered_map<std::string, std::string> redisMap;
+inline std::unordered_map<std::string, std::string> redisMap;
 
 // check for ping, if not then check for echo command
 void parse_redis_command(char *buffer, int client_fd);
