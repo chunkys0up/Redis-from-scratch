@@ -108,6 +108,8 @@ void parse_redis_command(char* buffer, int client_fd) {
             response = resp_bulk_string(tokens[1]);
         } 
 
+        cout << reponse << "\n";
+
         send(client_fd, response.c_str(), response.size(), 0);
         return;
     }
