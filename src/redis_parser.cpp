@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <cctype>
 #include <algorithm>
+#include <vector>
 
 using namespace std;
 
