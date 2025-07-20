@@ -105,7 +105,8 @@ void parse_redis_command(char* buffer, int client_fd) {
         response = "$-1\r\n";
 
         if(redisMap.find(tokens[1]) != redisMap.end()) {
-            response = resp_bulk_string(tokens[1]);
+            string data = redisMap[tokens[1]];
+            response = resp_bulk_string(data);
         } 
 
         cout << response << "\n";
