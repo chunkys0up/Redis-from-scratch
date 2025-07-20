@@ -1,6 +1,6 @@
 #include <iostream>
 #include "redis_parser.hpp"
-#include <string>
+#include <cstring>
 #include <sys/socket.h>
 #include <unistd.h>
 #include <cctype>
