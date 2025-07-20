@@ -23,22 +23,22 @@ vector<string> parse_resp_array(const string& input) {
     vector<string> result;
     size_t i = 0;
 
-    if(input[i] != '*') return result;
+    if (input[i] != '*') return result;
 
     // test with this command *2\r\n$4\r\nECHO\r\n$3\r\nhey\r\n
 
     // Expect '$4\r\nECHO\r\n'
-    while(input[i] != '\n') i++;
+    while (input[i] != '\n') i++;
     i++;
 
     // get multiple elements if needed
-    while(i < input.size()) {
-        if(input[i] != '$') break;
+    while (i < input.size()) {
+        if (input[i] != '$') break;
         i++;
 
         // parse length
         int len = 0;
-        while(isdigit(input[i])) {
+        while (isdigit(input[i])) {
             len = len * 10 + (input[i] - '0');
             i++;
         }
@@ -61,24 +61,29 @@ void parse_redis_command(char* buffer, int client_fd) {
     string request(buffer);
 
     vector<string> tokens = parse_resp_array(request);
+    if (tokens.empty()) {
+        std::cerr << "Invalid request format\n";
+        close(client_fd);
+        return;
+    }
 
-    // check if echo
-    if(strcmp(tokens[0], "PING") == 0) {
+    // check if ping
+    if (tokens[0] == "PING") {
         string response = "+PONG\r\n";
         send(client_fd, response.c_str(), response.size(), 0);
         return;
     }
 
     // now check for echo
-    if(strcmp(to_lower(tokens[0], "echo") == 0)) {
+    if (to_lower(tokens[0]) == "echo") {
         string response = "";
-        for(const auto& token : tokens)
-            response += resp_bulk_string(token);
+        for (size_t i = 1;i < tokens.size();i++)
+            repsonse += resp_bulk_string(tokens[i]);
 
         send(client_fd, response.c_str(), response.size(), 0);
         return;
     }
 
-    std::cerr << "request doesn't contain `PING`: Client disconnecting\n";
+    std::cerr << "Uknown command: " << tokens[0] << "\n";
     close(client_fd);
 }
