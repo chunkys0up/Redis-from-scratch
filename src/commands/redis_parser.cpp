@@ -106,7 +106,7 @@ void parse_redis_command(char* buffer, int client_fd) {
         // check if there's an expiry time
         if ((tokens.size() == 4) && (to_lower(tokens[3]) == "px")) {
             int time = std::stoi(tokens[4]);
-            expiryMap[key] = steady_clock::now() + seconds(time);
+            expiryMap[key] = steady_clock::now() + milliseconds(time);
         }
 
         send(client_fd, response.c_str(), response.size(), 0);
@@ -115,8 +115,6 @@ void parse_redis_command(char* buffer, int client_fd) {
 
     // check for GET
     if (tokens[0] == "GET") {
-        response = "$-1\r\n";
-
         string key = tokens[1];
 
         if (redisMap.find(key) != redisMap.end()) {
@@ -131,6 +129,8 @@ void parse_redis_command(char* buffer, int client_fd) {
             // check if the key still exists after possible expiry
             if(redisMap.find(key) != redisMap.end())
                 response = resp_bulk_string(redisMap[key]);
+            else    
+                response = "$-1\r\n";
         }
 
         send(client_fd, response.c_str(), response.size(), 0);
