@@ -24,7 +24,7 @@ unordered_map<string, steady_clock::time_point> expiryMap;
 
 unordered_map<string, vector<string>> listMap;
 unordered_map<string, bool> waitMap;
-unordered_map<string, string> queueMap;
+unordered_map<string, vector<string>> queueMap;
 
 
 string resp_bulk_string(const string& data) {
@@ -142,8 +142,8 @@ void parse_redis_command(char* buffer, int client_fd) {
 
         for (int i = 2;i < tokens.size();i++) {
             if (tokens[0] == "RPUSH") {
-                if (!waitGroup[list_key].empty()) {
-                    waitGroup[list_key].erase(waitGroup[list_key].begin());
+                if (!waitMap[list_key].empty()) {
+                    waitMap[list_key].erase(waitMap[list_key].begin());
                     queueMap[list_key].push_back(tokens[i]);
                 }
                 listMap[list_key].push_back(tokens[i]);
