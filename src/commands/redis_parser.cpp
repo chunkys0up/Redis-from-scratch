@@ -91,23 +91,14 @@ void parse_redis_command(char* buffer, int client_fd) {
         return;
     }
 
-    // check if ping
     if (tokens[0] == "PING") {
         response = "+PONG\r\n";
-        send(client_fd, response.c_str(), response.size(), 0);
-        return;
     }
-
-    // now check for echo (echo can only have 2 tokens, 1: echo, 2: msg)
-    if (tokens.size() == 2 && to_lower(tokens[0]) == "echo") {
+    else if (tokens.size() == 2 && to_lower(tokens[0]) == "echo") {
         response = resp_bulk_string(tokens[1]);
 
-        send(client_fd, response.c_str(), response.size(), 0);
-        return;
     }
-
-    // check for SET
-    if (tokens[0] == "SET") {
+    else if (tokens[0] == "SET") {
         string key = tokens[1], value = tokens[2];
 
         redisMap[key] = value;
@@ -119,12 +110,8 @@ void parse_redis_command(char* buffer, int client_fd) {
             expiryMap[key] = steady_clock::now() + milliseconds(time);
         }
 
-        send(client_fd, response.c_str(), response.size(), 0);
-        return;
     }
-
-    // check for GET
-    if (tokens[0] == "GET") {
+    else if (tokens[0] == "GET") {
         string key = tokens[1];
 
         if (redisMap.find(key) != redisMap.end()) {
@@ -143,28 +130,21 @@ void parse_redis_command(char* buffer, int client_fd) {
                 response = "$-1\r\n";
         }
 
-        send(client_fd, response.c_str(), response.size(), 0);
-        return;
     }
-
-    // check for RPUSH, LPUSH or LLEN
-    if (tokens[0] == "RPUSH" || tokens[0] == "LPUSH" || tokens[0] == "LLEN") {
+    else if (tokens[0] == "RPUSH" || tokens[0] == "LPUSH" || tokens[0] == "LLEN") {
         string list_key = tokens[1];
 
-        for(int i = 2;i < tokens.size();i++) {
-            if(tokens[0] == "RPUSH")
+        for (int i = 2;i < tokens.size();i++) {
+            if (tokens[0] == "RPUSH")
                 rpushMap[list_key].push_back(tokens[i]);
             else
                 rpushMap[list_key].insert(rpushMap[list_key].begin(), tokens[i]);
         }
-                
-        // return number of elements in RESP Integer format
-        string response = ":" + to_string(rpushMap[list_key].size()) + "\r\n";
-        send(client_fd, response.c_str(), response.size(), 0);
-        return;
-    }
 
-    if (tokens[0] == "LRANGE") {
+        // return number of elements in RESP Integer format
+        response = ":" + to_string(rpushMap[list_key].size()) + "\r\n";
+    }
+    else if (tokens[0] == "LRANGE") {
         string list_key = tokens[1];
         int start = stoi(tokens[2]), end = stoi(tokens[3]);
 
@@ -182,12 +162,24 @@ void parse_redis_command(char* buffer, int client_fd) {
         }
 
         // convert to RES
-        string response = lrange_bulk_string(res);
-        send(client_fd, response.c_str(), response.size(), 0);
-        return;
+        response = lrange_bulk_string(res);
+
+    }
+    else if (tokens[0] == "LPOP") {
+        string list_key = tokens[1];
+
+        if(rpushMap[list_key].size() == 0)
+            response = "$-1\r\n";
+        else {
+            response = rpushMap[list_key][0];
+            rpushMap[list_key].erase(rpushMap[list_key].begin());
+        }
+    }
+    else {
+        cerr << "Unknown command: " << tokens[0] << "\n";
+        close(client_fd);
     }
 
-
-    cerr << "Unknown command: " << tokens[0] << "\n";
-    close(client_fd);
+    send(client_fd, response.c_str(), response.size(), 0);
+    return;
 }
