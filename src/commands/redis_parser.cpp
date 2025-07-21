@@ -199,17 +199,17 @@ void parse_redis_command(char* buffer, int client_fd) {
 
         bool timed_out = !cv.wait_for(lock, chrono::seconds(stoi(tokens[2])), [&] {
             return !listMap[list_key].empty();
-            })
+            });
 
-            if (timed_out) {
-                response = "$-1\r\n";
-            }
-            else {
-                vector<string> res = { list_key, listMap[list_key][0] };
-                listMap[list_key].erase(listMap[list_key].begin());
+        if (timed_out) {
+            response = "$-1\r\n";
+        }
+        else {
+            vector<string> res = { list_key, listMap[list_key][0] };
+            listMap[list_key].erase(listMap[list_key].begin());
 
-                response = lrange_bulk_string(res);
-            }
+            response = lrange_bulk_string(res);
+        }
     }
     else {
         cerr << "Unknown command: " << tokens[0] << "\n";
