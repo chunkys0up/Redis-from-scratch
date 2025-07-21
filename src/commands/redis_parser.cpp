@@ -15,18 +15,17 @@
 #include <unordered_map>
 #include <chrono>
 
-#include <mutex>
-#include <condition_variable>
 
 using namespace std;
 using namespace std::chrono;
 
 unordered_map<string, string> redisMap;
 unordered_map<string, steady_clock::time_point> expiryMap;
-unordered_map<string, vector<string>> listMap;
 
-mutex mtx;
-condition_variable cv;
+unordered_map<string, vector<string>> listMap;
+unordered_map<string, bool> waitMap;
+unordered_map<string, string> queueMap;
+
 
 string resp_bulk_string(const string& data) {
     return "$" + to_string(data.size()) + "\r\n" + data + "\r\n";
@@ -142,8 +141,14 @@ void parse_redis_command(char* buffer, int client_fd) {
         string list_key = tokens[1];
 
         for (int i = 2;i < tokens.size();i++) {
-            if (tokens[0] == "RPUSH")
+            if (tokens[0] == "RPUSH") {
+                if (!waitGroup[list_key].empty()) {
+                    waitGroup[list_key].erase(waitGroup[list_key].begin());
+                    queueMap[list_key].push_back(tokens[i]);
+                }
                 listMap[list_key].push_back(tokens[i]);
+
+            }
             else
                 listMap[list_key].insert(listMap[list_key].begin(), tokens[i]);
         }
@@ -151,7 +156,6 @@ void parse_redis_command(char* buffer, int client_fd) {
         // return number of elements in RESP Integer format
         response = ":" + to_string(listMap[list_key].size()) + "\r\n";
 
-        cv.notify_all();
     }
     else if (tokens[0] == "LRANGE") {
         string list_key = tokens[1];
@@ -163,8 +167,6 @@ void parse_redis_command(char* buffer, int client_fd) {
         if (start < 0) start = 0;
 
         vector<string> res;
-
-        cout << "start: " << start << " end: " << end << "\n";
 
         for (int i = start;i <= end && i < listMap[list_key].size();i++) {
             res.push_back(listMap[list_key][i]);
@@ -189,37 +191,40 @@ void parse_redis_command(char* buffer, int client_fd) {
                 res.push_back(listMap[list_key][0]);
                 listMap[list_key].erase(listMap[list_key].begin());
             }
-            cout << "res.size(): " << res.size() << "\n";
             response = lrange_bulk_string(res);
         }
     }
     else if (tokens[0] == "BLPOP") {
-        unique_lock<mutex> lock(mtx);
+        // we can create a unordered_set<bool> to keep track of whichever list we need a value
+        // we keep on loop checking until unordered_set[list_key] = false
+        // then we go to a unordered_map and pop it out
+
         string list_key = tokens[1];
-        int timeOut = stoi(tokens[2]);
 
-        bool timed_out;
+        int wait_time = stoi(tokens[2]);
+        bool indefiniteTime = (wait_time == 0) ? true : false;
+        steady_clock::time_point end_time = steady_clock::now() + seconds(wait_time);
 
-        if (timeOut == 0) {
-            cv.wait_for(lock, [&] {
-                return !listMap[list_key].empty();
-                });
-            time_out = false;
-        }
-        else {
-            timed_out = !cv.wait_for(lock, seconds(timeOut), [&] {
-                return !listMap[list_key].empty();
-                });
-        }
-
-        if (timed_out) {
-            response = "$-1\r\n";
-        }
-        else {
+        if (!listMap[list_key].empty()) {
             vector<string> res = { list_key, listMap[list_key][0] };
             listMap[list_key].erase(listMap[list_key].begin());
 
             response = lrange_bulk_string(res);
+        }
+        else {
+            waitMap[list_key].push_back(true);
+
+            while (indefiniteTime || steady_clock::now() <= end_time) {
+                if (!waitMap[list_key][0]) {
+                    indefiniteTime = false;
+
+                    // check the queueMap, erase item, and return response
+                    vector<string> res = { list_key, queueMap[list_key][0] };
+                    queueMap[list_key].erase(queueMap[list_key].begin());
+
+                    response = lrange_bulk_string(res);
+                }
+            }
         }
     }
     else {
