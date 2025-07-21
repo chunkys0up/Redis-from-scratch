@@ -196,10 +196,20 @@ void parse_redis_command(char* buffer, int client_fd) {
     else if (tokens[0] == "BLPOP") {
         unique_lock<mutex> lock(mtx);
         string list_key = tokens[1];
+        int timeout = stoi(tokens[2]);
 
-        bool timed_out = !cv.wait_for(lock, chrono::seconds(stoi(tokens[2])), [&] {
-            return !listMap[list_key].empty();
-            });
+        bool timed_out;
+
+        if (timeout == 0) {
+            timed_out !cv.wait(lock, [&] {
+                return !listMap[list_key].empty();
+                });
+        }
+        else {
+            timed_out = !cv.wait_for(lock, seconds(timout), [&] {
+                return !listMap[list_key].empty();
+                });
+        }
 
         if (timed_out) {
             response = "$-1\r\n";
