@@ -180,7 +180,7 @@ void parse_redis_command(char* buffer, int client_fd) {
                 res.push_back(rpushMap[list_key][0]);
                 rpushMap[list_key].erase(rpushMap[list_key].begin());
             }
-
+            cout << "res.size(): " << res.size() << "\n";
             response = lrange_bulk_string(res);
         }
     }
