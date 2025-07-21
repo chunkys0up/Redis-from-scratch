@@ -208,18 +208,22 @@ void parse_redis_command(char* buffer, int client_fd) {
         }
         else {
             waitMap[list_key].push_back(true);
+            bool found = false;
 
             while (indefiniteTime || steady_clock::now() <= end_time) {
                 if (!waitMap[list_key][0]) {
                     indefiniteTime = false;
+                    found = true;
 
-                    // check the queueMap, erase item, and return response
                     vector<string> res = { list_key, queueMap[list_key][0] };
                     queueMap[list_key].erase(queueMap[list_key].begin());
 
                     response = lrange_bulk_string(res);
                 }
             }
+
+            if(!found)
+                response = "$-1\r\n";
         }
     }
     else {
