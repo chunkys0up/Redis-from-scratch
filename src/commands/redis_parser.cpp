@@ -9,12 +9,13 @@
 #include <algorithm>
 #include <vector>
 
-// for SET and GET
+// for SET, GET, and expiry
 #include <unordered_map>
-using namespace std;
+#include <chrono>
 
-// global variable for SET and GET
-// unordered_map<string, string> redisMap;
+using namespace std;
+using namespace std::chrono;
+
 
 string resp_bulk_string(const string& data) {
     return "$" + to_string(data.size()) + "\r\n" + data + "\r\n";
@@ -86,30 +87,46 @@ void parse_redis_command(char* buffer, int client_fd) {
     // now check for echo (echo can only have 2 tokens, 1: echo, 2: msg)
     if (tokens.size() == 2 && to_lower(tokens[0]) == "echo") {
         response = resp_bulk_string(tokens[1]);
-        
+
         send(client_fd, response.c_str(), response.size(), 0);
         return;
     }
 
     // check for SET
-    if(tokens[0] == "SET") {
-        redisMap[tokens[1]] = tokens[2];
+    if (tokens[0] == "SET") {
+        string key = tokens[1], value = tokens[2];
+
+        redisMap[key] = value;
         response = "+OK\r\n";
+
+        // check if there's an expiry time
+        if (to_lower(tokens[3] == "px")) {
+            int time = tokens[4];
+            expiryMap[key] = steady_clock::now() + seconds(time);
+        }
 
         send(client_fd, response.c_str(), response.size(), 0);
         return;
     }
 
     // check for GET
-    if(tokens[0] == "GET") {
+    if (tokens[0] == "GET") {
         response = "$-1\r\n";
 
-        if(redisMap.find(tokens[1]) != redisMap.end()) {
-            string data = redisMap[tokens[1]];
-            response = resp_bulk_string(data);
-        } 
+        string key = tokens[1];
 
-        cout << response << "\n";
+        if (redisMap.find(key) != redisMap.end()) {
+            string data = redisMap[key];
+
+            // check if time now is > expiry time (is expired)
+            if (expiryMap.find(key) != expiryMap.end() && steady_clock::now() > expiryMap[key]) {
+                redisMap.erase(key);
+                expiryMap.erase(key);
+            }
+            else {
+                response = resp_bulk_string(data);
+            }
+        }
 
         send(client_fd, response.c_str(), response.size(), 0);
         return;
