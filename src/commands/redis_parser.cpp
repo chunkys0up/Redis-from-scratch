@@ -26,6 +26,15 @@ string resp_bulk_string(const string& data) {
     return "$" + to_string(data.size()) + "\r\n" + data + "\r\n";
 }
 
+string lrange_bulk_string(const vector<string>& data) {
+    string response = "*" + to_string(data.size()) + "\r\n";
+
+    for (auto& element : data)
+        response += "$" + to_string(element.length()) + "\r\n" + element + "\r\n";
+
+    return response;
+}
+
 string to_lower(const string& token) {
     string res = token;
     transform(res.begin(), res.end(), res.begin(), ::tolower);
@@ -108,7 +117,7 @@ void parse_redis_command(char* buffer, int client_fd) {
 
         // check if there's an expiry time
         if ((tokens.size() == 5) && (to_lower(tokens[3]) == "px")) {
-            int time = std::stoi(tokens[4]);
+            int time = stoi(tokens[4]);
             expiryMap[key] = steady_clock::now() + milliseconds(time);
         }
 
@@ -144,16 +153,29 @@ void parse_redis_command(char* buffer, int client_fd) {
     if (tokens[0] == "RPUSH") {
         string list_key = tokens[1];
 
-        for(int i = 2;i < tokens.size();i++) {
+        for (int i = 2;i < tokens.size();i++) {
             rpushMap[list_key].push_back(tokens[i]);
         }
-        
+
         // return number of elements in RESP Integer format
         string response = ":" + to_string(rpushMap[list_key].size()) + "\r\n";
         send(client_fd, response.c_str(), response.size(), 0);
         return;
     }
 
+    if (tokens[0] == "LRANGE") {
+        int start = stoi(tokens[1]), end = stoi(tokens[2]);
+        vector<string> res;
+
+        for (int i = start;i <= end && i < rpushMap.size();i++) {
+            res.push_back(tokens[i]);
+        }
+
+        // convert to RES
+        string response = lrange_bulk_string(res);
+        send(client_fd, response.c_str(), response.size(), 0);
+        return;
+    }
 
     std::cerr << "Uknown command: " << tokens[0] << "\n";
     close(client_fd);
