@@ -144,8 +144,10 @@ void parse_redis_command(char* buffer, int client_fd) {
     if (tokens[0] == "RPUSH") {
         string list_key = tokens[1], value = tokens[2];
 
-        rpushMap[list_key].push_back(value);
-
+        for(int i = 1;i < tokens.size();i++) {
+            rpushMap[list_key].push_back(tokens[i]);
+        }
+        
         // return number of elements in RESP Integer format
         string response = ":" + to_string(rpushMap[list_key].size()) + "\r\n";
         send(client_fd, response.c_str(), response.size(), 0);
