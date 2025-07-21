@@ -86,7 +86,7 @@ void parse_redis_command(char* buffer, int client_fd) {
 
     vector<string> tokens = parse_resp_array(request);
     if (tokens.empty()) {
-        std::cerr << "Invalid request format\n";
+        cerr << "Invalid request format\n";
         close(client_fd);
         return;
     }
@@ -115,7 +115,7 @@ void parse_redis_command(char* buffer, int client_fd) {
 
         // check if there's an expiry time
         if ((tokens.size() == 5) && (to_lower(tokens[3]) == "px")) {
-            int time = std::stoi(tokens[4]);
+            int time = stoi(tokens[4]);
             expiryMap[key] = steady_clock::now() + milliseconds(time);
         }
 
@@ -162,11 +162,12 @@ void parse_redis_command(char* buffer, int client_fd) {
     }
 
     if (tokens[0] == "LRANGE") {
-        int start = std::stoi(tokens[1]), end = std::stoi(tokens[2]);
+        string list_key = tokens[1];
+        int start = stoi(tokens[2]), end = stoi(tokens[3]);
         vector<string> res;
 
         for (int i = start;i <= end && i < rpushMap.size();i++) {
-            res.push_back(tokens[i]);
+            res.push_back(rpushMap[list_key][i]);
         }
 
         // convert to RES
@@ -175,6 +176,6 @@ void parse_redis_command(char* buffer, int client_fd) {
         return;
     }
 
-    std::cerr << "Uknown command: " << tokens[0] << "\n";
+    cerr << "Uknown command: " << tokens[0] << "\n";
     close(client_fd);
 }
