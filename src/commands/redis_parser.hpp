@@ -1,7 +1,7 @@
 #ifndef REDIS_PARSER_HPP
 #define REDIS_PARSER_HPP
 
-#pragma once
+// #pragma once
 
 #include <unordered_map>
 #include <string>

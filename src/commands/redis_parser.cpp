@@ -1,5 +1,7 @@
 #include "redis_parser.hpp"
 #include <iostream>
+#include <string>
+
 // sending from sockets & closing it
 #include <sys/socket.h>
 #include <unistd.h>
@@ -103,7 +105,7 @@ void parse_redis_command(char* buffer, int client_fd) {
 
         // check if there's an expiry time
         if ((tokens.size() == 4) && (to_lower(tokens[3]) == "px")) {
-            int time = tokens[4];
+            int time = std::stoi(tokens[4]);
             expiryMap[key] = steady_clock::now() + seconds(time);
         }
 
