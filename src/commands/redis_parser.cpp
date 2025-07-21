@@ -107,7 +107,6 @@ void parse_redis_command(char* buffer, int client_fd) {
         if ((tokens.size() == 4) && (to_lower(tokens[3]) == "px")) {
             int time = std::stoi(tokens[4]);
             expiryMap[key] = steady_clock::now() + seconds(time);
-            cout << "expiryMap[" << key << "]: " << expiryMap[key] << "\n";
         }
 
         send(client_fd, response.c_str(), response.size(), 0);
@@ -125,6 +124,7 @@ void parse_redis_command(char* buffer, int client_fd) {
 
             // check if time now is > expiry time (is expired)
             if (expiryMap.find(key) != expiryMap.end() && steady_clock::now() > expiryMap[key]) {
+                cout << "Erased: " << key << "\n";
                 redisMap.erase(key);
                 expiryMap.erase(key);
             }
