@@ -201,9 +201,10 @@ void parse_redis_command(char* buffer, int client_fd) {
         bool timed_out;
 
         if (timeOut == 0) {
-            timed_out = !cv.wait_for(lock, [&] {
+            cv.wait_for(lock, [&] {
                 return !listMap[list_key].empty();
-            });
+                });
+            time_out = false;
         }
         else {
             timed_out = !cv.wait_for(lock, seconds(timeOut), [&] {
