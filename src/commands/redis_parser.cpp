@@ -124,13 +124,13 @@ void parse_redis_command(char* buffer, int client_fd) {
 
             // check if time now is > expiry time (is expired)
             if (expiryMap.find(key) != expiryMap.end() && steady_clock::now() > expiryMap[key]) {
-                cout << "Erased: " << key << "\n";
                 redisMap.erase(key);
                 expiryMap.erase(key);
             }
-            else {
-                response = resp_bulk_string(data);
-            }
+            
+            // check if the key still exists after possible expiry
+            if(redisMap.find(key) != redisMap.end())
+                response = resp_bulk_string(redisMap[key]);
         }
 
         send(client_fd, response.c_str(), response.size(), 0);
