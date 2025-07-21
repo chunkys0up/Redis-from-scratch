@@ -13,7 +13,7 @@ extern unordered_map<string, string> redisMap;
 extern unordered_map<string, steady_clock::time_point> expiryMap;
 
 extern unordered_map<string, vector<string>> listMap;
-extern unordered_map<string, bool> waitMap;
+extern unordered_map<string, vector<bool>> waitMap;
 extern unordered_map<string, vector<string>> queueMap;
 
 // check for ping, if not then check for echo command

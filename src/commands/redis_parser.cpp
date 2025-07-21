@@ -23,7 +23,7 @@ unordered_map<string, string> redisMap;
 unordered_map<string, steady_clock::time_point> expiryMap;
 
 unordered_map<string, vector<string>> listMap;
-unordered_map<string, bool> waitMap;
+unordered_map<string, vector<bool>> waitMap;
 unordered_map<string, vector<string>> queueMap;
 
 
@@ -136,7 +136,6 @@ void parse_redis_command(char* buffer, int client_fd) {
 
     }
     else if (tokens[0] == "RPUSH" || tokens[0] == "LPUSH" || tokens[0] == "LLEN") {
-        lock_guard<mutex> lock(mtx);
 
         string list_key = tokens[1];
 
@@ -195,10 +194,6 @@ void parse_redis_command(char* buffer, int client_fd) {
         }
     }
     else if (tokens[0] == "BLPOP") {
-        // we can create a unordered_set<bool> to keep track of whichever list we need a value
-        // we keep on loop checking until unordered_set[list_key] = false
-        // then we go to a unordered_map and pop it out
-
         string list_key = tokens[1];
 
         int wait_time = stoi(tokens[2]);
