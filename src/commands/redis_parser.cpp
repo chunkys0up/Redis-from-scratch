@@ -147,14 +147,17 @@ void parse_redis_command(char* buffer, int client_fd) {
         return;
     }
 
-    // check for RPUSH
-    if (tokens[0] == "RPUSH") {
+    // check for RPUSH or LPUSH
+    if (tokens[0] == "RPUSH" || tokens[0] == "LPUSH") {
         string list_key = tokens[1];
 
-        for (int i = 2;i < tokens.size();i++) {
-            rpushMap[list_key].push_back(tokens[i]);
+        for(int i = 2;i < tokens.size();i++) {
+            if(tokens[0] == "RPUSH")
+                rpushMap[list_key].push_back(tokens[i]);
+            else
+                rpushMap[list_key].insert(rpushMap[list_key].begin(), tokens[i]);
         }
-
+                
         // return number of elements in RESP Integer format
         string response = ":" + to_string(rpushMap[list_key].size()) + "\r\n";
         send(client_fd, response.c_str(), response.size(), 0);
@@ -165,10 +168,10 @@ void parse_redis_command(char* buffer, int client_fd) {
         string list_key = tokens[1];
         int start = stoi(tokens[2]), end = stoi(tokens[3]);
 
-        if(start < 0) start = rpushMap[list_key].size() + start;
-        if(end < 0) end = rpushMap[list_key].size() + end;
+        if (start < 0) start = rpushMap[list_key].size() + start;
+        if (end < 0) end = rpushMap[list_key].size() + end;
 
-        if(start < 0) start = 0;
+        if (start < 0) start = 0;
 
         vector<string> res;
 
@@ -183,6 +186,7 @@ void parse_redis_command(char* buffer, int client_fd) {
         send(client_fd, response.c_str(), response.size(), 0);
         return;
     }
+
 
     cerr << "Uknown command: " << tokens[0] << "\n";
     close(client_fd);
