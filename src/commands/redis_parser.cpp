@@ -82,6 +82,8 @@ void parse_redis_command(char* buffer, int client_fd) {
         return;
     }
 
+    cout << tokens[0] << "\n";
+
     // check if ping
     if (tokens[0] == "PING") {
         response = "+PONG\r\n";
