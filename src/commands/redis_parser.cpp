@@ -107,6 +107,7 @@ void parse_redis_command(char* buffer, int client_fd) {
         if ((tokens.size() == 4) && (to_lower(tokens[3]) == "px")) {
             int time = std::stoi(tokens[4]);
             expiryMap[key] = steady_clock::now() + seconds(time);
+            cout << "expiryMap[" << key << "]: " << expiryMap[key] << "\n";
         }
 
         send(client_fd, response.c_str(), response.size(), 0);
