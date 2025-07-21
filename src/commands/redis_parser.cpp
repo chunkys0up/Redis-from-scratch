@@ -145,7 +145,7 @@ void parse_redis_command(char* buffer, int client_fd) {
         rpushMap[list_key].push_back(value);
 
         // return number of elements in RESP Integer format
-        string response = ":" + rpushMap[list_key].size() + "\r\n";
+        string response = ":" + to_string(rpushMap[list_key].size()) + "\r\n";
         send(client_fd, response.c_str(), response.size(), 0);
     }
 
