@@ -166,7 +166,7 @@ void parse_redis_command(char* buffer, int client_fd) {
         int start = stoi(tokens[2]), end = stoi(tokens[3]);
         vector<string> res;
 
-        for (int i = start;i <= end && i < rpushMap.size();i++) {
+        for (int i = start;i <= end && i < rpushMap[list_key].size();i++) {
             res.push_back(rpushMap[list_key][i]);
         }
 
