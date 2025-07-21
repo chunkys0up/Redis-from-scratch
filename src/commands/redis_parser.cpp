@@ -16,6 +16,7 @@
 #include <chrono>
 
 #include <mutex>
+#include <condition_variable>
 
 using namespace std;
 using namespace std::chrono;
@@ -194,8 +195,9 @@ void parse_redis_command(char* buffer, int client_fd) {
     }
     else if (tokens[0] == "BLPOP") {
         unique_lock<mutex> lock(mtx);
+        string list_key = tokens[1];
 
-        bool timed_out = !cv.wait_for(lock, chrono::seconds(timeout), [&] {
+        bool timed_out = !cv.wait_for(lock, chrono::seconds(stoi(tokens[2])), [&] {
             return !listMap[list_key].empty();
             })
 
