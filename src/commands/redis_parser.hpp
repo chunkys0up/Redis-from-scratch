@@ -11,7 +11,8 @@ using namespace std::chrono;
 
 extern unordered_map<string, string> redisMap;
 extern unordered_map<string, steady_clock::time_point> expiryMap;
-extern unordered_map<string, vector<string>> rpushMap;
+
+extern unordered_map<string, vector<string>> listMap;
 
 
 // check for ping, if not then check for echo command

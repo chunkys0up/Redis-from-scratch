@@ -15,12 +15,17 @@
 #include <unordered_map>
 #include <chrono>
 
+#include <mutex>
+
 using namespace std;
 using namespace std::chrono;
 
 unordered_map<string, string> redisMap;
 unordered_map<string, steady_clock::time_point> expiryMap;
-unordered_map<string, vector<string>> rpushMap;
+unordered_map<string, vector<string>> listMap;
+
+mutex mtx;
+condition_variable cv;
 
 string resp_bulk_string(const string& data) {
     return "$" + to_string(data.size()) + "\r\n" + data + "\r\n";
@@ -99,57 +104,60 @@ void parse_redis_command(char* buffer, int client_fd) {
 
     }
     else if (tokens[0] == "SET") {
-        string key = tokens[1], value = tokens[2];
+        string list_key = tokens[1], value = tokens[2];
 
-        redisMap[key] = value;
+        redisMap[list_key] = value;
         response = "+OK\r\n";
 
         // check if there's an expiry time
         if ((tokens.size() == 5) && (to_lower(tokens[3]) == "px")) {
             int time = stoi(tokens[4]);
-            expiryMap[key] = steady_clock::now() + milliseconds(time);
+            expiryMap[list_key] = steady_clock::now() + milliseconds(time);
         }
 
     }
     else if (tokens[0] == "GET") {
-        string key = tokens[1];
+        string list_key = tokens[1];
 
-        if (redisMap.find(key) != redisMap.end()) {
-            string data = redisMap[key];
+        if (redisMap.find(list_key) != redisMap.end()) {
+            string data = redisMap[list_key];
 
             // check if time now is > expiry time (is expired)
-            if (expiryMap.find(key) != expiryMap.end() && steady_clock::now() > expiryMap[key]) {
-                redisMap.erase(key);
-                expiryMap.erase(key);
+            if (expiryMap.find(list_key) != expiryMap.end() && steady_clock::now() > expiryMap[list_key]) {
+                redisMap.erase(list_key);
+                expiryMap.erase(list_key);
             }
 
-            // check if the key still exists after possible expiry
-            if (redisMap.find(key) != redisMap.end())
-                response = resp_bulk_string(redisMap[key]);
+            if (redisMap.find(list_key) != redisMap.end())
+                response = resp_bulk_string(redisMap[list_key]);
             else
                 response = "$-1\r\n";
         }
 
     }
     else if (tokens[0] == "RPUSH" || tokens[0] == "LPUSH" || tokens[0] == "LLEN") {
+        lock_guard<mutex> lock(mtx);
+
         string list_key = tokens[1];
 
         for (int i = 2;i < tokens.size();i++) {
             if (tokens[0] == "RPUSH")
-                rpushMap[list_key].push_back(tokens[i]);
+                listMap[list_key].push_back(tokens[i]);
             else
-                rpushMap[list_key].insert(rpushMap[list_key].begin(), tokens[i]);
+                listMap[list_key].insert(listMap[list_key].begin(), tokens[i]);
         }
 
         // return number of elements in RESP Integer format
-        response = ":" + to_string(rpushMap[list_key].size()) + "\r\n";
+        response = ":" + to_string(listMap[list_key].size()) + "\r\n";
+
+        cv.notify_all();
     }
     else if (tokens[0] == "LRANGE") {
         string list_key = tokens[1];
         int start = stoi(tokens[2]), end = stoi(tokens[3]);
 
-        if (start < 0) start = rpushMap[list_key].size() + start;
-        if (end < 0) end = rpushMap[list_key].size() + end;
+        if (start < 0) start = listMap[list_key].size() + start;
+        if (end < 0) end = listMap[list_key].size() + end;
 
         if (start < 0) start = 0;
 
@@ -157,33 +165,52 @@ void parse_redis_command(char* buffer, int client_fd) {
 
         cout << "start: " << start << " end: " << end << "\n";
 
-        for (int i = start;i <= end && i < rpushMap[list_key].size();i++) {
-            res.push_back(rpushMap[list_key][i]);
+        for (int i = start;i <= end && i < listMap[list_key].size();i++) {
+            res.push_back(listMap[list_key][i]);
         }
 
-        // convert to RES
         response = lrange_bulk_string(res);
 
     }
     else if (tokens[0] == "LPOP") {
         string list_key = tokens[1];
 
-        if (rpushMap[list_key].size() == 0)
+        if (listMap[list_key].size() == 0)
             response = "$-1\r\n";
         else if (tokens.size() == 2) {
-            response = resp_bulk_string(rpushMap[list_key][0]);
-            rpushMap[list_key].erase(rpushMap[list_key].begin());
-        } else {
+            response = resp_bulk_string(listMap[list_key][0]);
+            listMap[list_key].erase(listMap[list_key].begin());
+        }
+        else {
             vector<string> res;
 
-            for(int i = 0;i <= stoi(tokens[2]) && i < rpushMap[list_key].size();i++) {
-                res.push_back(rpushMap[list_key][0]);
-                rpushMap[list_key].erase(rpushMap[list_key].begin());
+            for (int i = 0;i <= stoi(tokens[2]) && i < listMap[list_key].size();i++) {
+                res.push_back(listMap[list_key][0]);
+                listMap[list_key].erase(listMap[list_key].begin());
             }
             cout << "res.size(): " << res.size() << "\n";
             response = lrange_bulk_string(res);
         }
     }
+    else if (tokens[0] == "BLPOP") {
+        unique_lock<mutex> lock(mtx);
+
+        bool timed_out = !cv.wait_for(lock, chrono::seconds(timeout), [&] {
+            return !listMap[list_key].empty();
+            })
+
+            if (timed_out) {
+                response = "$-1\r\n";
+            }
+            else {
+                vector<string> res = { list_key, listMap[list_key][0] };
+                listMap[list_key].erase(listMap[list_key].begin());
+
+                response = lrange_bulk_string(res);
+            }
+    }
+
+}
     else {
         cerr << "Unknown command: " << tokens[0] << "\n";
         close(client_fd);

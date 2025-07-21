@@ -72,7 +72,6 @@ int main(int argc, char** argv) {
 
     // detach thread
     client_thread.detach();
-
   }
 
   close(server_fd);
