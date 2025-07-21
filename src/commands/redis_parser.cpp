@@ -171,7 +171,7 @@ void parse_redis_command(char* buffer, int client_fd) {
         if(rpushMap[list_key].size() == 0)
             response = "$-1\r\n";
         else {
-            response = rpushMap[list_key][0];
+            response = resp_bulk_string(rpushMap[list_key][0]);
             rpushMap[list_key].erase(rpushMap[list_key].begin());
         }
     }
