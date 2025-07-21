@@ -20,6 +20,7 @@ using namespace std::chrono;
 
 unordered_map<string, string> redisMap;
 unordered_map<string, steady_clock::time_point> expiryMap;
+unordered_map<string, vector<string>> rpushMap;
 
 string resp_bulk_string(const string& data) {
     return "$" + to_string(data.size()) + "\r\n" + data + "\r\n";
@@ -125,16 +126,27 @@ void parse_redis_command(char* buffer, int client_fd) {
                 redisMap.erase(key);
                 expiryMap.erase(key);
             }
-            
+
             // check if the key still exists after possible expiry
-            if(redisMap.find(key) != redisMap.end())
+            if (redisMap.find(key) != redisMap.end())
                 response = resp_bulk_string(redisMap[key]);
-            else    
+            else
                 response = "$-1\r\n";
         }
 
         send(client_fd, response.c_str(), response.size(), 0);
         return;
+    }
+
+    // check for RPUSH
+    if (tokens[0] == "RPUSH") {
+        string list_key = tokens[1], value = tokens[2];
+
+        rpushMap[list_key].push_back(value);
+
+        // return number of elements in RESP Integer format
+        string response = ":" + rpushMap[list_key].size() + "\r\n";
+        send(client_fd, response.c_str(), response.size(), 0);
     }
 
 
