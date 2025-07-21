@@ -170,6 +170,8 @@ void parse_redis_command(char* buffer, int client_fd) {
 
         vector<string> res;
 
+        cout << "start: " << start << " end: " << end << "\n";
+
         for (int i = start;i <= end && i < rpushMap[list_key].size();i++) {
             res.push_back(rpushMap[list_key][i]);
         }
