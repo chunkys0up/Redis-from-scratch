@@ -142,9 +142,9 @@ void parse_redis_command(char* buffer, int client_fd) {
 
     // check for RPUSH
     if (tokens[0] == "RPUSH") {
-        string list_key = tokens[1], value = tokens[2];
+        string list_key = tokens[1];
 
-        for(int i = 1;i < tokens.size();i++) {
+        for(int i = 2;i < tokens.size();i++) {
             rpushMap[list_key].push_back(tokens[i]);
         }
         
