@@ -16,6 +16,8 @@
 using namespace std;
 using namespace std::chrono;
 
+unordered_map<string, string> redisMap;
+unordered_map<string, steady_clock::time_point> expiryMap;
 
 string resp_bulk_string(const string& data) {
     return "$" + to_string(data.size()) + "\r\n" + data + "\r\n";
