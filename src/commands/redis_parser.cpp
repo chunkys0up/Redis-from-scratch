@@ -168,11 +168,20 @@ void parse_redis_command(char* buffer, int client_fd) {
     else if (tokens[0] == "LPOP") {
         string list_key = tokens[1];
 
-        if(rpushMap[list_key].size() == 0)
+        if (rpushMap[list_key].size() == 0)
             response = "$-1\r\n";
-        else {
+        else if (tokens.size() == 2) {
             response = resp_bulk_string(rpushMap[list_key][0]);
             rpushMap[list_key].erase(rpushMap[list_key].begin());
+        } else {
+            vector<int> res;
+
+            for(int i = 0;i < tokens[3] && i < rpushMap[list_key].size();i++) {
+                res.push_back(rpushMap[list_key][0]);
+                rpushMap[list_key].erase(rpushMap[list_key].begin());
+            }
+
+            response = lrange_bulk_string(res);
         }
     }
     else {
