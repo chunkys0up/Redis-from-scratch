@@ -211,8 +211,6 @@ void parse_redis_command(char* buffer, int client_fd) {
                 response = lrange_bulk_string(res);
             }
     }
-
-}
     else {
         cerr << "Unknown command: " << tokens[0] << "\n";
         close(client_fd);
