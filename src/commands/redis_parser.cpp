@@ -91,8 +91,6 @@ void parse_redis_command(char* buffer, int client_fd) {
         return;
     }
 
-    cout << tokens[0] << "\n";
-
     // check if ping
     if (tokens[0] == "PING") {
         response = "+PONG\r\n";
@@ -117,7 +115,7 @@ void parse_redis_command(char* buffer, int client_fd) {
 
         // check if there's an expiry time
         if ((tokens.size() == 5) && (to_lower(tokens[3]) == "px")) {
-            int time = stoi(tokens[4]);
+            int time = std::stoi(tokens[4]);
             expiryMap[key] = steady_clock::now() + milliseconds(time);
         }
 
@@ -164,7 +162,7 @@ void parse_redis_command(char* buffer, int client_fd) {
     }
 
     if (tokens[0] == "LRANGE") {
-        int start = stoi(tokens[1]), end = stoi(tokens[2]);
+        int start = std::stoi(tokens[1]), end = std::stoi(tokens[2]);
         vector<string> res;
 
         for (int i = start;i <= end && i < rpushMap.size();i++) {
