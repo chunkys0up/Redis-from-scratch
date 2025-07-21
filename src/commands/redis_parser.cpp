@@ -147,8 +147,8 @@ void parse_redis_command(char* buffer, int client_fd) {
         return;
     }
 
-    // check for RPUSH or LPUSH
-    if (tokens[0] == "RPUSH" || tokens[0] == "LPUSH") {
+    // check for RPUSH, LPUSH or LLEN
+    if (tokens[0] == "RPUSH" || tokens[0] == "LPUSH" || tokens[0] == "LLEN") {
         string list_key = tokens[1];
 
         for(int i = 2;i < tokens.size();i++) {
@@ -188,6 +188,6 @@ void parse_redis_command(char* buffer, int client_fd) {
     }
 
 
-    cerr << "Uknown command: " << tokens[0] << "\n";
+    cerr << "Unknown command: " << tokens[0] << "\n";
     close(client_fd);
 }
