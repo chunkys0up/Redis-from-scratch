@@ -168,6 +168,9 @@ void parse_redis_command(char* buffer, int client_fd) {
         if(start < 0) start = rpushMap[list_key].size() + start;
         if(end < 0) end = rpushMap[list_key].size() + end;
 
+        if(start < 0) start = 0;
+        if(end < 0) end = 0;
+
         vector<string> res;
 
         cout << "start: " << start << " end: " << end << "\n";
