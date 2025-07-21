@@ -164,6 +164,10 @@ void parse_redis_command(char* buffer, int client_fd) {
     if (tokens[0] == "LRANGE") {
         string list_key = tokens[1];
         int start = stoi(tokens[2]), end = stoi(tokens[3]);
+
+        if(start < 0) start = rpushMap[list_key].size() + start;
+        if(end < 0) end = rpushMap[list_key].size() + end;
+
         vector<string> res;
 
         for (int i = start;i <= end && i < rpushMap[list_key].size();i++) {
