@@ -144,21 +144,20 @@ void parse_redis_command(char* buffer, int client_fd) {
         string list_key = tokens[1];
 
         for (int i = 2;i < tokens.size();i++) {
-            if (tokens[0] == "RPUSH") {
-                if (!waitMap[list_key].empty()) {
-                    vector<string> res = { list_key, waitMap[list_key][0] };
-                    waitMap[list_key].erase(waitMap[list_key].begin());
-
-                    string sendToClient = lrange_bulk_string(res);
-                    send(clientQueue.front(), sendToClient.c_str(), response.size());
-                }
-
+            if (tokens[0] == "RPUSH")
                 listMap[list_key].push_back(tokens[i]);
-            }
-            else {
+            else
                 listMap[list_key].insert(listMap[list_key].begin(), tokens[i]);
-            }
         }
+
+        if (tokens[0] == "RPUSH" && !waitingClients[list_key].empty()) {
+            int cli_fd = waitingClients[list_key].front();
+            waitingClients[list_key].pop();
+
+            cvMap[list_key].notify_one();
+        }
+
+
         // return number of elements in RESP Integer format
         response = ":" + to_string(listMap[list_key].size()) + "\r\n";
     }
