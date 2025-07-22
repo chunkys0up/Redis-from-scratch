@@ -15,6 +15,9 @@
 #include <unordered_map>
 #include <chrono>
 
+#include <mutex>
+#include <condition_variable>
+#include <queue>
 
 using namespace std;
 using namespace std::chrono;
@@ -25,7 +28,6 @@ unordered_map<string, steady_clock::time_point> expiryMap;
 unordered_map<string, vector<string>> listMap;
 
 unordered_map<string, vector<bool>> waitMap;
-unordered_map<string, vector<string>> queueMap;
 queue<int> clientQueue;
 
 
@@ -144,19 +146,21 @@ void parse_redis_command(char* buffer, int client_fd) {
         for (int i = 2;i < tokens.size();i++) {
             if (tokens[0] == "RPUSH") {
                 if (!waitMap[list_key].empty()) {
+                    vector<string> res = { list_key, waitMap[list_key][0] };
                     waitMap[list_key].erase(waitMap[list_key].begin());
-                    queueMap[list_key].push_back(tokens[i]);
+
+                    string sendToClient = lrange_bulk_string(res);
+                    send(clientQueue.front(), sendToClient.c_str(), response.size());
                 }
+
                 listMap[list_key].push_back(tokens[i]);
-
             }
-            else
+            else {
                 listMap[list_key].insert(listMap[list_key].begin(), tokens[i]);
+            }
         }
-
         // return number of elements in RESP Integer format
         response = ":" + to_string(listMap[list_key].size()) + "\r\n";
-
     }
     else if (tokens[0] == "LRANGE") {
         string list_key = tokens[1];
@@ -197,50 +201,35 @@ void parse_redis_command(char* buffer, int client_fd) {
     }
     else if (tokens[0] == "BLPOP") {
         string list_key = tokens[1];
-
         double wait_time = stod(tokens[2]);
-        duration<double> wait_duration(wait_time);
 
-        steady_clock::time_point end_time = steady_clock::now() + duration_cast<milliseconds>(wait_duration);
-        bool indefiniteTime = (wait_time == 0) ? true : false;
-
-
+        // if list has elements, then pop and return 
         if (!listMap[list_key].empty()) {
             vector<string> res = { list_key, listMap[list_key][0] };
             listMap[list_key].erase(listMap[list_key].begin());
-
             response = lrange_bulk_string(res);
         }
         else {
-            clientQueue.push(client_fd);
-            waitMap[list_key].push_back(true);
-            bool found = false;
+            // no times, block
 
-            // keep in perpetual state until its time to continuously check for rpush from diff client
-            while (!clientQueue.empty() && clientQueue.front() != client_fd) {
-                // do nothing (pause)
-            }
+            unique_lock<mutex> lock(mtxMap[list_key]);
+            waitingClients[list_key].push(client_fd);
 
-            if (!clientQueue.empty())
-                clientQueue.pop();
+            bool timed_out = !cvMap[list_key].wait_for(lock, milliseconds((int)(wait_time * 1000)), [&]() {
+                return !listMap[list_key].empty();
+                });
 
-            while (indefiniteTime || steady_clock::now() <= end_time) {
-                if (!waitMap[list_key][0]) {
-                    found = true;
-
-                    vector<string> res = { list_key, queueMap[list_key][0] };
-                    queueMap[list_key].erase(queueMap[list_key].begin());
-
-                    response = lrange_bulk_string(res);
-                    break;
-                }
-            }
-
-            if (!found)
+            if (timed_out) {
                 response = "$-1\r\n";
-
-            cout << "response: " << response << "\n";
+            }
+            else {
+                vector<string> res = { list_key, listMap[list_key][0] };
+                listMap[list_key].erase(listMap[list_key].begin());
+                response = lrange_bulk_string(res);
+            }
         }
+
+
     }
     else {
         cerr << "Unknown command: " << tokens[0] << "\n";
