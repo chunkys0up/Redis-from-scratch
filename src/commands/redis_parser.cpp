@@ -215,13 +215,13 @@ void parse_redis_command(char* buffer, int client_fd) {
 
             while (indefiniteTime || steady_clock::now() <= end_time) {
                 if (!waitMap[list_key][0]) {
-                    indefiniteTime = false;
                     found = true;
 
                     vector<string> res = { list_key, queueMap[list_key][0] };
                     queueMap[list_key].erase(queueMap[list_key].begin());
 
                     response = lrange_bulk_string(res);
+                    break;
                 }
             }
 
