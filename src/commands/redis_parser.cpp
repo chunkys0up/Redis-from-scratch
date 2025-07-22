@@ -25,7 +25,7 @@ using namespace std::chrono;
 unordered_map<string, string> redisMap;
 unordered_map<string, steady_clock::time_point> expiryMap;
 
-// unordered_map<string, vector<string>> listMap;
+unordered_map<string, vector<string>> listMap;
 // unordered_map<string, vector<bool>> waitMap;
 // queue<int> clientQueue;
 
