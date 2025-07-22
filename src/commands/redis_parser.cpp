@@ -229,6 +229,7 @@ void parse_redis_command(char* buffer, int client_fd) {
                 listMap[list_key].erase(listMap[list_key].begin());
                 response = lrange_bulk_string(res);
             }
+            cout << "response: " << response << "\n";
         }
     }
     else {
