@@ -198,9 +198,10 @@ void parse_redis_command(char* buffer, int client_fd) {
 
         double wait_time = stod(tokens[2]);
         duration<double> wait_duration(wait_time);
-        
+
+        steady_clock::time_point end_time = steady_clock::now() + duration_cast<milliseconds>(wait_duration);
         bool indefiniteTime = (wait_time == 0) ? true : false;
-        steady_clock::time_point end_time = steady_clock::now() + wait_duration;
+
 
         if (!listMap[list_key].empty()) {
             vector<string> res = { list_key, listMap[list_key][0] };
@@ -224,7 +225,7 @@ void parse_redis_command(char* buffer, int client_fd) {
                 }
             }
 
-            if(!found)
+            if (!found)
                 response = "$-1\r\n";
         }
     }
