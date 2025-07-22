@@ -221,7 +221,19 @@ void parse_redis_command(char* buffer, int client_fd) {
                 return !listMap[list_key].empty();
                 });
 
-            if (timed_out) {
+            // if wait_time = 0, then it should be infinite
+            if (wait_time == 0) {
+                cvMap[list_key].wait(lock, [&]() {
+                    return !listMap[list_key].empty();
+                    });
+
+                vector<string> res = { list_key, listMap[list_key][0] };
+                listMap[list_key].erase(listMap[list_key].begin());
+                response = lrange_bulk_string(res);
+
+                cout << "Valid BLPOP\n";
+            }
+            else if (timed_out) {
                 response = "$-1\r\n";
             }
             else {
