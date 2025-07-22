@@ -25,10 +25,13 @@ using namespace std::chrono;
 unordered_map<string, string> redisMap;
 unordered_map<string, steady_clock::time_point> expiryMap;
 
-unordered_map<string, vector<string>> listMap;
+// unordered_map<string, vector<string>> listMap;
+// unordered_map<string, vector<bool>> waitMap;
+// queue<int> clientQueue;
 
-unordered_map<string, vector<bool>> waitMap;
-queue<int> clientQueue;
+unordered_map<string, condition_variable> cvMap;
+unordered_map<string, mutex> mtxMap;
+unordered_map<string, queue<int>> waitingClients;
 
 
 string resp_bulk_string(const string& data) {
@@ -227,8 +230,6 @@ void parse_redis_command(char* buffer, int client_fd) {
                 response = lrange_bulk_string(res);
             }
         }
-
-
     }
     else {
         cerr << "Unknown command: " << tokens[0] << "\n";
