@@ -228,8 +228,9 @@ void parse_redis_command(char* buffer, int client_fd) {
                 vector<string> res = { list_key, listMap[list_key][0] };
                 listMap[list_key].erase(listMap[list_key].begin());
                 response = lrange_bulk_string(res);
+
+                cout << "Valid BLPOP\n";
             }
-            cout << "response: " << response << "\n";
         }
     }
     else {
