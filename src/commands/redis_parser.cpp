@@ -238,6 +238,8 @@ void parse_redis_command(char* buffer, int client_fd) {
 
             if (!found)
                 response = "$-1\r\n";
+
+            cout << "response: " << response << "\n";
         }
     }
     else {
