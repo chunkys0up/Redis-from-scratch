@@ -23,8 +23,10 @@ unordered_map<string, string> redisMap;
 unordered_map<string, steady_clock::time_point> expiryMap;
 
 unordered_map<string, vector<string>> listMap;
+
 unordered_map<string, vector<bool>> waitMap;
 unordered_map<string, vector<string>> queueMap;
+queue<int> clientQueue;
 
 
 string resp_bulk_string(const string& data) {
@@ -210,20 +212,26 @@ void parse_redis_command(char* buffer, int client_fd) {
             response = lrange_bulk_string(res);
         }
         else {
+            clientQueue.push(client_fd);
             waitMap[list_key].push_back(true);
             bool found = false;
+            
+            // keep in perpetual state until its time to continuously check for rpush from diff client
+            while (clientQueue.front() != client_fd) {
+                while (indefiniteTime || steady_clock::now() <= end_time) {
+                    if (!waitMap[list_key][0]) {
+                        found = true;
 
-            while (indefiniteTime || steady_clock::now() <= end_time) {
-                if (!waitMap[list_key][0]) {
-                    found = true;
+                        vector<string> res = { list_key, queueMap[list_key][0] };
+                        queueMap[list_key].erase(queueMap[list_key].begin());
 
-                    vector<string> res = { list_key, queueMap[list_key][0] };
-                    queueMap[list_key].erase(queueMap[list_key].begin());
-
-                    response = lrange_bulk_string(res);
-                    break;
+                        response = lrange_bulk_string(res);
+                        break;
+                    }
                 }
             }
+
+
 
             if (!found)
                 response = "$-1\r\n";
