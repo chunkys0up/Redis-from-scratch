@@ -24,9 +24,7 @@ unordered_map<string, steady_clock::time_point> expiryMap;
 
 unordered_map<string, vector<string>> listMap;
 
-unordered_map<string, vector<bool>> waitMap;
-unordered_map<string, vector<string>> queueMap;
-queue<int> clientQueue;
+unordered_map<string, queue<int>> blpop_waiting_clients;
 
 
 string resp_bulk_string(const string& data) {
@@ -143,15 +141,21 @@ void parse_redis_command(char* buffer, int client_fd) {
 
         for (int i = 2;i < tokens.size();i++) {
             if (tokens[0] == "RPUSH") {
-                if (!waitMap[list_key].empty()) {
-                    waitMap[list_key].erase(waitMap[list_key].begin());
-                    queueMap[list_key].push_back(tokens[i]);
-                }
                 listMap[list_key].push_back(tokens[i]);
-
             }
             else
                 listMap[list_key].insert(listMap[list_key].begin(), tokens[i]);
+        }
+
+        if (tokens[0] == "RPUSH" && !blpop_waiting_clients[list_key].empty()) {
+            int waiting_fd = blpop_waiting_clients[list_key].front();
+            blpop_waiting_clients[list_key].pop();
+
+            vector<string> res = { list_key, listMap[list_key][0] };
+            listMap[list_key].erase(listMap[list_key].begin());
+
+            string resp = lrange_bulk_string(res);
+            send(waiting_fd, resp.c_str(), resp.size(), 0);
         }
 
         // return number of elements in RESP Integer format
@@ -197,49 +201,43 @@ void parse_redis_command(char* buffer, int client_fd) {
     }
     else if (tokens[0] == "BLPOP") {
         string list_key = tokens[1];
-
         double wait_time = stod(tokens[2]);
-        duration<double> wait_duration(wait_time);
 
-        steady_clock::time_point end_time = steady_clock::now() + duration_cast<milliseconds>(wait_duration);
-        bool indefiniteTime = (wait_time == 0) ? true : false;
-
-
+        // If list already has elements, pop immediately
         if (!listMap[list_key].empty()) {
-            vector<string> res = { list_key, listMap[list_key][0] };
+            vector<string> res = { list_key, listMap[list_key].front() };
             listMap[list_key].erase(listMap[list_key].begin());
-
             response = lrange_bulk_string(res);
+            send(client_fd, response.c_str(), response.size(), 0);
+            return;
         }
-        else {
-            clientQueue.push(client_fd);
-            waitMap[list_key].push_back(true);
-            bool found = false;
 
-            // keep in perpetual state until its time to continuously check for rpush from diff client
-            while (!clientQueue.empty() && clientQueue.front() != client_fd) {
-                // do nothing (pause)
+        // Otherwise, block until an item is pushed or timeout
+        auto start = steady_clock::now();
+        auto timeout = milliseconds((int)(wait_time * 1000));
+
+        // Add client to waiting queue
+        blpop_waiting_clients[list_key].push(client_fd);
+
+        while (true) {
+            // Check if an item arrived (RPUSH triggers this)
+            if (!listMap[list_key].empty()) {
+                vector<string> res = { list_key, listMap[list_key].front() };
+                listMap[list_key].erase(listMap[list_key].begin());
+                response = lrange_bulk_string(res);
+                send(client_fd, response.c_str(), response.size(), 0);
+                return;
             }
 
-            if (!clientQueue.empty())
-                clientQueue.pop();
-
-            while (indefiniteTime || steady_clock::now() <= end_time) {
-                if (!waitMap[list_key][0]) {
-                    found = true;
-
-                    vector<string> res = { list_key, queueMap[list_key][0] };
-                    queueMap[list_key].erase(queueMap[list_key].begin());
-
-                    response = lrange_bulk_string(res);
-                    break;
-                }
+            // Check timeout
+            if (wait_time > 0 && (steady_clock::now() - start) >= timeout) {
+                response = "$-1\r\n"; // NIL
+                send(client_fd, response.c_str(), response.size(), 0);
+                return;
             }
 
-            if (!found)
-                response = "$-1\r\n";
-
-            cout << "response: " << response << "\n";
+            // Avoid CPU spin
+            this_thread::sleep_for(milliseconds(1));
         }
     }
     else {
