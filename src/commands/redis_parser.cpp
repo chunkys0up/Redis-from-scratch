@@ -196,9 +196,11 @@ void parse_redis_command(char* buffer, int client_fd) {
     else if (tokens[0] == "BLPOP") {
         string list_key = tokens[1];
 
-        float wait_time = stof(tokens[2]);
+        double wait_time = stod(tokens[2]);
+        duration<double> wait_duration(wait_time);
+        
         bool indefiniteTime = (wait_time == 0) ? true : false;
-        steady_clock::time_point end_time = steady_clock::now() + seconds(wait_time);
+        steady_clock::time_point end_time = steady_clock::now() + wait_duration;
 
         if (!listMap[list_key].empty()) {
             vector<string> res = { list_key, listMap[list_key][0] };
