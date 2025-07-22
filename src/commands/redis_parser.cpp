@@ -196,7 +196,7 @@ void parse_redis_command(char* buffer, int client_fd) {
     else if (tokens[0] == "BLPOP") {
         string list_key = tokens[1];
 
-        int wait_time = stoi(tokens[2]);
+        float wait_time = stof(tokens[2]);
         bool indefiniteTime = (wait_time == 0) ? true : false;
         steady_clock::time_point end_time = steady_clock::now() + seconds(wait_time);
 
