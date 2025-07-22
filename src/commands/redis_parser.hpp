@@ -21,9 +21,9 @@ extern unordered_map<string, vector<string>> listMap;
 //extern unordered_map<string, vector<string>> queueMap;
 //extern queue<int> clientQueue;
 
-unordered_map<string, condition_variable> cvMap;
-unordered_map<string, mutex> mtxMap;
-unordered_map<string, queue<int>> waitingClients;
+extern unordered_map<string, condition_variable> cvMap;
+extern unordered_map<string, mutex> mtxMap;
+extern unordered_map<string, queue<int>> waitingClients;
 
 // check for ping, if not then check for echo command
 void parse_redis_command(char* buffer, int client_fd);
