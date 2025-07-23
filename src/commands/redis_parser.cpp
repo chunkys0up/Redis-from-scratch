@@ -183,7 +183,8 @@ void parse_redis_command(char* buffer, int client_fd) {
         }
     }
     else if (tokens[0] == "INCR") {
-        string list_key = tokens[2], value = redisMap[list_key];
+        string list_key = tokens[1];
+        string value = redisMap[list_key];
         cout << "value: " << value << "\n";
 
         try {
@@ -194,7 +195,8 @@ void parse_redis_command(char* buffer, int client_fd) {
                 redisMap[list_key] = to_string(stoi(redisMap[list_key]) + 1);
                 cout << "checking...\n";
             }
-        } catch (const exception& e) {
+        }
+        catch (const exception& e) {
             cout << "There was an error\n";
         }
 
