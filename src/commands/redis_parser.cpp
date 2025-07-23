@@ -84,6 +84,7 @@ void parse_redis_command(char* buffer, int client_fd) {
 
     if (isMultiQueued) {
         multiQueue.push(request);
+
     }
     else {
         vector<string> tokens = parse_resp_array(request);
@@ -98,6 +99,10 @@ void parse_redis_command(char* buffer, int client_fd) {
             response = "+OK\r\n";
         }
         else if (tokens[0] == "EXEC") {
+            if(!isMultiQueued) {
+                response = 
+            }
+
             while (!multiQueue.empty()) {
                 string req = multiQueue.front();
                 multiQueue.pop();
