@@ -193,7 +193,7 @@ void parse_redis_command(char* buffer, int client_fd) {
             redisMap[list_key] = to_string(stoi(redisMap[list_key]) + 1);
         }
 
-        response = ":" + to_string(listMap[list_key].size()) + "\r\n";
+        response = ":" + to_string(listMap[list_key]) + "\r\n";
     }
     else {
         cerr << "Unknown command: " << tokens[0] << "\n";
