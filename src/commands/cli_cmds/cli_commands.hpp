@@ -17,7 +17,7 @@ void handleSET(const std::vector<std::string>& tokens, std::string& response, st
 
 void handleGET(const std::vector<std::string>& tokens, std::string& response, std::unordered_map<std::string, std::string>& redisMap, std::unordered_map<std::string, std::chrono::steady_clock::time_point>& expiryMap);
 
-void handleRPUSH(const std::vector<std::string>& tokens, std::string& response, std::unordered_map<std::string, std::vector<std::string>>& listMap, std::unordered_map<std::string, std::queue<int>>& waitingClients);
+void handleRPUSH(const std::vector<std::string>& tokens, std::string& response, std::unordered_map<std::string, std::condition_variable>& cvMap, std::unordered_map<std::string, std::vector<std::string>>& listMap, std::unordered_map<std::string, std::queue<int>>& waitingClients);
 
 void handleLPUSH(const std::vector<std::string>& tokens, std::string& response, std::unordered_map<std::string, std::vector<std::string>>& listMap);
 

@@ -51,7 +51,7 @@ void registeredCommands(const vector<string>& tokens, string& response, int clie
         handleGET(tokens, respnose, redisMap, expiryMap);
     }
     else if (tokens[0] == "RPUSH") {
-        handleRPUSH(tokens, response, listMap, waitingClients);
+        handleRPUSH(tokens, response, cvMap, listMap, waitingClients);
     }
     else if (tokens[0] == "LPUSH") {
         handleLPUSH(tokens, response, listMap);
@@ -84,7 +84,6 @@ void parse_redis_command(char* buffer, int client_fd) {
 
     if (isMultiQueued) {
         multiQueue.push(request);
-
     }
     else {
         vector<string> tokens = parse_resp_array(request);

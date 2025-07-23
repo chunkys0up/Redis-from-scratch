@@ -52,7 +52,7 @@ void handleGET(const vector<string>& tokens, string& response, unordered_map<str
     }
 }
 
-void handleRPUSH(const vector<string>& tokens, string& response, unordered_map< string, vector<string>>& listMap, unordered_map<string, queue<int>>& waitingClients) {
+void handleRPUSH(const vector<string>& tokens, string& response, unordered_map<std::string, std::condition_variable>& cvMap, unordered_map< string, vector<string>>& listMap, unordered_map<string, queue<int>>& waitingClients) {
     string list_key = tokens[1];
 
     for (int i = 2;i < tokens.size();i++) {
