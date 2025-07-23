@@ -184,13 +184,18 @@ void parse_redis_command(char* buffer, int client_fd) {
     }
     else if (tokens[0] == "INCR") {
         string list_key = tokens[2];
-
-        if(redisMap[list_key].size() == 0) {
-            redisMap[list_key] = "1";
-        } else if (isAllDigits(redisMap[list_key])) {
-            redisMap[list_key] = to_string(stoi(redisMap[list_key]) + 1);
-            cout << "checking...\n";
+        try {
+            if (redisMap[list_key].size() == 0) {
+                redisMap[list_key] = "1";
+            }
+            else if (isAllDigits(redisMap[list_key])) {
+                redisMap[list_key] = to_string(stoi(redisMap[list_key]) + 1);
+                cout << "checking...\n";
+            }
+        } catch (const exception& e) {
+            cout << "There was an error\n";
         }
+
 
         response = "+OK\r\n";
     }
