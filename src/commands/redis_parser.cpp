@@ -25,7 +25,7 @@ using namespace std;
 using namespace std::chrono;
 
 bool isMultiQueued = false;
-extern queue<string> multiQueue;
+queue<string> multiQueue;
 
 unordered_map<string, string> redisMap;
 unordered_map<string, steady_clock::time_point> expiryMap;
