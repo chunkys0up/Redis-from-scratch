@@ -180,17 +180,23 @@ void parse_redis_command(char* buffer, int client_fd) {
         }
     }
     else if (tokens[0] == "INCR") {
+        bool valid = false;
         string list_key = tokens[1];
         string value = redisMap[list_key];
 
         if (value.length() == 0) {
+            valid = true;
             redisMap[list_key] = "1";
         }
         else if (isAllDigits(value)) {
+            valid = true;
             redisMap[list_key] = to_string(stoi(redisMap[list_key]) + 1);
         }
-
-        response = ":" + redisMap[list_key] + "\r\n";
+        
+        if(valid)
+            response = ":" + redisMap[list_key] + "\r\n";
+        else
+            response = "-ERR value is not an integer or out of range\r\n";
     }
     else {
         cerr << "Unknown command: " << tokens[0] << "\n";
