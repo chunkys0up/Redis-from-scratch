@@ -188,7 +188,7 @@ void parse_redis_command(char* buffer, int client_fd) {
         if(redisMap[list_key].size() == 0) {
             redisMap[list_key] = "1";
         } else if (isAllDigits(redisMap[list_key])) {
-            redisMap[list_key] = stoi(redisMap[list_key]) + 1;
+            redisMap[list_key] = to_string(stoi(redisMap[list_key]) + 1);
         }
 
         response = "+OK\r\n";
