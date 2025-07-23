@@ -1,5 +1,5 @@
-#ifndef REDIS_HELPER_CMDS_HPP
-#define REDIS_HELPER_CMDS_HPP
+#ifndef CLI_HELPER_HPP
+#define CLI_HELPER_HPP
 
 #include <vector>
 #include <string>
