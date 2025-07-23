@@ -183,6 +183,8 @@ void parse_redis_command(char* buffer, int client_fd) {
         }
     }
     else if (tokens[0] == "INCR") {
+        cout << "testing to see if token is valid\n";
+
         string list_key = tokens[2];
         try {
             if (redisMap[list_key].size() == 0) {
