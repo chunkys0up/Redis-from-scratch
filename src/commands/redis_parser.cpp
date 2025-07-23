@@ -146,6 +146,9 @@ void parse_redis_command(char* buffer, int client_fd) {
         }
     }
     else if (tokens[0] == "BLPOP") {
+        string list_key = tokens[1];
+        double wait_time = stod(tokens[2]);
+
         unique_lock<mutex> lock(mtxMap[list_key]);
         waitingClients[list_key].push(client_fd);
 
