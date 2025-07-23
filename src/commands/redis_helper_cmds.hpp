@@ -2,6 +2,7 @@
 #define REDIS_HELPER_CMDS_HPP
 
 #include <vector>
+#include <string>
 
 using namespace std;
 
