@@ -146,40 +146,34 @@ void parse_redis_command(char* buffer, int client_fd) {
         }
     }
     else if (tokens[0] == "BLPOP") {
-        string list_key = tokens[1];
-        double wait_time = stod(tokens[2]);
+        unique_lock<mutex> lock(mtxMap[list_key]);
+        waitingClients[list_key].push(client_fd);
 
-        // if list has elements, then pop and return 
-        if (!listMap[list_key].empty()) {
+        bool timed_out = !cvMap[list_key].wait_for(lock, milliseconds((int)(wait_time * 1000)), [&]() {
+            return !listMap[list_key].empty();
+            });
+
+        // if wait_time = 0, then it should be infinite
+        if (wait_time == 0) {
+            cvMap[list_key].wait(lock, [&]() {
+                return !listMap[list_key].empty();
+                });
+
             vector<string> res = { list_key, listMap[list_key][0] };
             listMap[list_key].erase(listMap[list_key].begin());
             response = lrange_bulk_string(res);
+
+            cout << "Valid BLPOP\n";
+        }
+        else if (timed_out) {
+            response = "$-1\r\n";
         }
         else {
-            unique_lock<mutex> lock(mtxMap[list_key]);
-            waitingClients[list_key].push(client_fd);
+            vector<string> res = { list_key, listMap[list_key][0] };
+            listMap[list_key].erase(listMap[list_key].begin());
+            response = lrange_bulk_string(res);
 
-            bool timed_out = false;
-
-            if (wait_time == 0) {
-                cvMap[list_key].wait(lock, [&]() {
-                    return !listMap[list_key].empty();
-                    });
-            }
-            else { // !wait_for() means timeout happened before condition was met
-                timed_out = !cvMap[list_key].wait_for(lock, milliseconds((int)(wait_time * 1000)), [&]() {
-                    return !listMap[list_key].empty();
-                    });
-            }
-
-            if (!timed_out) {
-                vector<string> res = { list_key, listMap[list_key][0] };
-                listMap[list_key].erase(listMap[list_key].begin());
-                response = lrange_bulk_string(res);
-            }
-            else {
-                response = "$-1\r\n";
-            }
+            cout << "Valid BLPOP\n";
         }
     }
     else if (tokens[0] == "INCR") {
