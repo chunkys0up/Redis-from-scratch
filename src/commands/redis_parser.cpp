@@ -185,12 +185,12 @@ void parse_redis_command(char* buffer, int client_fd) {
     else if (tokens[0] == "INCR") {
         string list_key = tokens[2], value = redisMap[list_key];
         cout << "value: " << value << "\n";
-        
+
         try {
             if (value.length() == 0) {
                 redisMap[list_key] = "1";
             }
-            else if (isAllDigits(value) {
+            else if (isAllDigits(value)) {
                 redisMap[list_key] = to_string(stoi(redisMap[list_key]) + 1);
                 cout << "checking...\n";
             }
