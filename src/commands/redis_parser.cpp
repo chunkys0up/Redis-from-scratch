@@ -39,7 +39,7 @@ unordered_map<string, queue<int>> waitingClients;
 
 void registeredCommands(const vector<string>& tokens, string& response, int client_fd) {
     if (tokens[0] == "PING") {
-        handlePING(tokens, response);
+        handlePING(response);
     }
     else if (tokens[0] == "ECHO") {
         handleECHO(tokens, response);
@@ -48,7 +48,7 @@ void registeredCommands(const vector<string>& tokens, string& response, int clie
         handleSET(tokens, response, redisMap, expiryMap);
     }
     else if (tokens[0] == "GET") {
-        handleGET(tokens, respnose, redisMap, expiryMap);
+        handleGET(tokens, response, redisMap, expiryMap);
     }
     else if (tokens[0] == "RPUSH") {
         handleRPUSH(tokens, response, cvMap, listMap, waitingClients);
@@ -116,5 +116,5 @@ void parse_redis_command(char* buffer, int client_fd) {
     }
 
     send(client_fd, response.c_str(), response.size(), 0);
-    return 0;
+    return;
 }
