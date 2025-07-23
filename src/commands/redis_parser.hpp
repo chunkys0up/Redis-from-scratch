@@ -12,6 +12,8 @@
 using namespace std;
 using namespace std::chrono;
 
+extern bool isMultiQueued;
+
 extern unordered_map<string, string> redisMap;
 extern unordered_map<string, steady_clock::time_point> expiryMap;
 
@@ -20,6 +22,8 @@ extern unordered_map<string, vector<string>> listMap;
 extern unordered_map<string, condition_variable> cvMap;
 extern unordered_map<string, mutex> mtxMap;
 extern unordered_map<string, queue<int>> waitingClients;
+
+extern queue<string> multiQueue;
 
 // check for ping, if not then check for echo command
 void parse_redis_command(char* buffer, int client_fd);
