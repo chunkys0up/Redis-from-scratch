@@ -187,17 +187,12 @@ void parse_redis_command(char* buffer, int client_fd) {
         string value = redisMap[list_key];
         cout << "value: " << value << "\n";
 
-        try {
-            if (value.length() == 0) {
-                redisMap[list_key] = "1";
-            }
-            else if (isAllDigits(value)) {
-                redisMap[list_key] = to_string(stoi(redisMap[list_key]) + 1);
-                cout << "checking...\n";
-            }
+        if (value.length() == 0) {
+            redisMap[list_key] = "1";
         }
-        catch (const exception& e) {
-            cout << "There was an error\n";
+        else if (isAllDigits(value)) {
+            redisMap[list_key] = to_string(stoi(redisMap[list_key]) + 1);
+            cout << "checking...\n";
         }
 
 
