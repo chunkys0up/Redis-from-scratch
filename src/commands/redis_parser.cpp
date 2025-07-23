@@ -189,6 +189,7 @@ void parse_redis_command(char* buffer, int client_fd) {
             redisMap[list_key] = "1";
         } else if (isAllDigits(redisMap[list_key])) {
             redisMap[list_key] = to_string(stoi(redisMap[list_key]) + 1);
+            cout << "checking...\n";
         }
 
         response = "+OK\r\n";
