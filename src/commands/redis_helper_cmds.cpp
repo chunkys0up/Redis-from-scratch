@@ -7,7 +7,15 @@
 using namespace std;
 
 bool isAllDigits(const string& str) {
-    return !str.empty() && all_of(str.begin(), str.end(), ::isdigit);
+    if(str.empty())
+        return false;
+
+    for(auto& c : str) {
+        if(!isdigit(c))
+            return false;
+    }
+
+    return true;
 }
 
 string resp_bulk_string(const string& data) {
