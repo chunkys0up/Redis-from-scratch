@@ -192,11 +192,11 @@ void parse_redis_command(char* buffer, int client_fd) {
         }
         else if (isAllDigits(value)) {
             redisMap[list_key] = to_string(stoi(redisMap[list_key]) + 1);
-            cout << "checking...\n";
+            cout << "new value: " << redisMap[list_key] << "\n";
         }
 
 
-        response = "+OK\r\n";
+        response = resp_bulk_string(redisMap[list_key]);
     }
     else {
         cerr << "Unknown command: " << tokens[0] << "\n";
