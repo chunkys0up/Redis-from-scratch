@@ -212,38 +212,40 @@ void parse_redis_command(char* buffer, int client_fd) {
             response = lrange_bulk_string(res);
         }
         else {
-            // no times, block
-
             unique_lock<mutex> lock(mtxMap[list_key]);
             waitingClients[list_key].push(client_fd);
 
-            bool timed_out = !cvMap[list_key].wait_for(lock, milliseconds((int)(wait_time * 1000)), [&]() {
-                return !listMap[list_key].empty();
-                });
+            bool timed_out = false;
 
-            // if wait_time = 0, then it should be infinite
             if (wait_time == 0) {
                 cvMap[list_key].wait(lock, [&]() {
                     return !listMap[list_key].empty();
                     });
+            }
+            else { // !wait_for() means timeout happened before condition was met
+                timed_out = !cvMap[list_key].wait_for(lock, milliseconds((int)(wait_time * 1000)), [&]() {
+                    return !listMap[list_key].empty();
+                    });
+            }
 
+            if (!timed_out) {
                 vector<string> res = { list_key, listMap[list_key][0] };
                 listMap[list_key].erase(listMap[list_key].begin());
                 response = lrange_bulk_string(res);
-
-                cout << "Valid BLPOP\n";
-            }
-            else if (timed_out) {
-                response = "$-1\r\n";
             }
             else {
-                vector<string> res = { list_key, listMap[list_key][0] };
-                listMap[list_key].erase(listMap[list_key].begin());
-                response = lrange_bulk_string(res);
-
-                cout << "Valid BLPOP\n";
+                response = "$-1\r\n";
             }
         }
+    }
+    else if (token[0] == "INCR") {
+        string list_key = tokens[2];
+
+        if (isdigit(redisMap[list_key])) {
+            redisMap[list_key] = (string)(stoi(redisMap[list_key]) + 1);
+        }
+
+        response = "+OK\r\n";
     }
     else {
         cerr << "Unknown command: " << tokens[0] << "\n";

@@ -17,10 +17,6 @@ extern unordered_map<string, steady_clock::time_point> expiryMap;
 
 extern unordered_map<string, vector<string>> listMap;
 
-//extern unordered_map<string, vector<bool>> waitMap;
-//extern unordered_map<string, vector<string>> queueMap;
-//extern queue<int> clientQueue;
-
 extern unordered_map<string, condition_variable> cvMap;
 extern unordered_map<string, mutex> mtxMap;
 extern unordered_map<string, queue<int>> waitingClients;
