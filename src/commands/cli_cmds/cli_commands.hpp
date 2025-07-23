@@ -6,32 +6,29 @@
 #include <chrono>
 #include <condition_variable>
 #include <unordered_map>
+#include <queue>
+#include <mutex> // needed for std::mutex
 
-using namespace std;
+void handlePING(std::string& response);
 
-void handlePING(string& response);
+void handleECHO(const std::vector<std::string>& tokens, std::string& response);
 
-void handleECHO(const vector<string>& tokens, string& response);
+void handleSET(const std::vector<std::string>& tokens, std::string& response, std::unordered_map<std::string, std::string>& redisMap, std::unordered_map<std::string, std::chrono::steady_clock::time_point>& expiryMap);
 
-void handleSET(const vector<string>& tokens, string& response, unordered_map<string, string>& redisMap, unordered_map<string, steady_clock::time_point>& expiryMap);
+void handleGET(const std::vector<std::string>& tokens, std::string& response, std::unordered_map<std::string, std::string>& redisMap, std::unordered_map<std::string, std::chrono::steady_clock::time_point>& expiryMap);
 
-void handleGET(const vector<string>& tokens, string& response, unordered_map<string, string>& redisMap, unordered_map<string, steady_clock::time_point>& expiryMap);
+void handleRPUSH(const std::vector<std::string>& tokens, std::string& response, std::unordered_map<std::string, std::vector<std::string>>& listMap, std::unordered_map<std::string, std::queue<int>>& waitingClients);
 
-void handleRPUSH(const vector<string>& tokens, string& response, unordered_map<string, vector<string>>& listMap, unordered_map<string, queue<int>>& waitingClients);
+void handleLPUSH(const std::vector<std::string>& tokens, std::string& response, std::unordered_map<std::string, std::vector<std::string>>& listMap);
 
-void handleLPUSH(const vector<string>& tokens, string& response, unordered_map< string, vector<string>>& listMap);
+void handleLLEN(const std::vector<std::string>& tokens, std::string& response, std::unordered_map<std::string, std::vector<std::string>>& listMap);
 
-void handleLLEN(const vector<string>& tokens, string& response, unordered_map<string, vector<string>>& listMap);
+void handleLLRANGE(const std::vector<std::string>& tokens, std::string& response, std::unordered_map<std::string, std::vector<std::string>>& listMap);
 
-void handleLLRANGE(const vector<string>& tokens, string& response, unordered_map<string, vector<string>>& listMap);
+void handleLPOP(const std::vector<std::string>& tokens, std::string& response, std::unordered_map<std::string, std::vector<std::string>>& listMap);
 
-void handleLPOP(const vector<string>& tokens, string& response, unordered_map<string, vector<string>>& listMap);
+void handleBLPOP(const std::vector<std::string>& tokens, std::string& response, int client_fd, std::unordered_map<std::string, std::vector<std::string>>& listMap, std::unordered_map<std::string, std::condition_variable>& cvMap, std::unordered_map<std::string, std::mutex>& mtxMap, std::unordered_map<std::string, std::queue<int>>& waitingClients);
 
-void handleBLPOP(const vector<string>& tokens, string& response, int client_fd, unordered_map<string, vector<string>>& listMap, unordered_map<string, condition_variable>& cvMap, unordered_map<string, mutex>& mtxMap, unordered_map<string, queue<int>>& waitingClients);
-
-void handleINCR(const vector<string>& tokens, string& response, unordered_map<string, string>& redisMap);
-
-
-
+void handleINCR(const std::vector<std::string>& tokens, std::string& response, std::unordered_map<std::string, std::string>& redisMap);
 
 #endif
