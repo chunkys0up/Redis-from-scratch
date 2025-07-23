@@ -185,18 +185,15 @@ void parse_redis_command(char* buffer, int client_fd) {
     else if (tokens[0] == "INCR") {
         string list_key = tokens[1];
         string value = redisMap[list_key];
-        cout << "value: " << value << "\n";
 
         if (value.length() == 0) {
             redisMap[list_key] = "1";
         }
         else if (isAllDigits(value)) {
             redisMap[list_key] = to_string(stoi(redisMap[list_key]) + 1);
-            cout << "new value: " << redisMap[list_key] << "\n";
         }
 
-
-        response = resp_bulk_string(redisMap[list_key]);
+        response = ":" + to_string(listMap[list_key].size()) + "\r\n";
     }
     else {
         cerr << "Unknown command: " << tokens[0] << "\n";
