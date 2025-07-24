@@ -218,9 +218,7 @@ void parse_redis_command(char* buffer, int client_fd) {
             return;
         }
 
-        cout << "tokens: " << tokens[0] << "\n";
-
-        if (tokens[0] == "EXEC") {
+        if (request == "EXEC") {
             cout << "checking... if tokens work\n";
             if (!isMultiQueued) {
                 response = "-ERR EXEC without MULTI\r\n";
