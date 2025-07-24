@@ -78,7 +78,7 @@ vector<string> parse_resp_array(const string& input) {
 
 pair<string, string> parse_entry_id(const string& id) {
     int index;
-    for (index = 0;i < id.length();i++) {
+    for (index = 0;index < id.length();index++) {
         if (id[index] == "-")
             break;
     }
