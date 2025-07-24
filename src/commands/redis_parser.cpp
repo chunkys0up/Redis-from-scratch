@@ -218,7 +218,7 @@ void redisCommands(const vector<string>& tokens, int client_fd, string& response
 
         int max_ms = -1, max_ver = -1;
         for (const auto& entry : streamMap[stream_key]) {
-            auto& [ms_str, ver_str] = parse_entry_id(entry["id"]);
+            auto& [ms_str, ver_str] = parse_entry_id(entry.at("id"));
 
             int ms = stoi(ms_str);
             int v = stoi(ver_str);
