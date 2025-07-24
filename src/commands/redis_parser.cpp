@@ -218,6 +218,8 @@ void parse_redis_command(char* buffer, int client_fd) {
             return;
         }
 
+        cout << "tokens: " << tokens[0] << "\n";
+
         if (tokens[0] == "EXEC") {
             cout << "checking... if tokens work\n";
             if (!isMultiQueued) {
