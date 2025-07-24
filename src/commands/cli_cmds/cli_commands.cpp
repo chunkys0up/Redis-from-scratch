@@ -56,8 +56,11 @@ void handleRPUSH(const vector<string>& tokens, string& response, unordered_map<s
     string list_key = tokens[1];
 
     for (int i = 2;i < tokens.size();i++) {
+        cout << tokens[i] << " ";
         listMap[list_key].push_back(tokens[i]);
     }
+
+    cout << "\n";
 
     if (!waitingClients[list_key].empty()) {
         int cli_fd = waitingClients[list_key].front();
@@ -119,9 +122,11 @@ void handleLPOP(const vector<string>& tokens, string& response, unordered_map<st
         vector<string> res;
 
         for (int i = 1;i <= stoi(tokens[2]) && i < listMap[list_key].size();i++) {
+            cout << listMap[list_key][0] << " ";
             res.push_back(listMap[list_key][0]);
             listMap[list_key].erase(listMap[list_key].begin());
         }
+        cout << "\n";
         response = lrange_bulk_string(res);
     }
 }
