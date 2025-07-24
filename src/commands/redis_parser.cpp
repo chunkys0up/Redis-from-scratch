@@ -101,7 +101,8 @@ void redisCommands(const vector<string>& tokens, int client_fd, string& response
         }
 
         // return number of elements in RESP Integer format
-        response = ":" + to_string(listMap[list_key].size()) + "\r\n";
+        int size = listMap[list_key].size();
+        response = ":" + to_string(size) + "\r\n";
     }
     else if (tokens[0] == "LRANGE") {
         string list_key = tokens[1];
