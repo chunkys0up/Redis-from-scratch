@@ -246,6 +246,7 @@ void parse_redis_command(char* buffer, int client_fd) {
         response = "+QUEUED\r\n";
     }
     else {
+        cout << "Went to redisCommands\n";
         redisCommands(tokens, client_fd, response);
     }
 
