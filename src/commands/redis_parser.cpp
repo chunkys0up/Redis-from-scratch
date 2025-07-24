@@ -17,9 +17,13 @@
 #include <unordered_map>
 #include <chrono>
 
+// for BLPOP
 #include <mutex>
 #include <condition_variable>
 #include <queue>
+
+// for pair
+#include <utility>
 
 using namespace std;
 using namespace std::chrono;
@@ -35,7 +39,7 @@ unordered_map<string, condition_variable> cvMap;
 unordered_map<string, mutex> mtxMap;
 unordered_map<string, queue<int>> waitingClients;
 
-unordered_map<string, unordered_map<string, string>> streamMap;
+unordered_map<string, vector<unordered_map<string, string>>> streamMap;
 
 
 void redisCommands(const vector<string>& tokens, int client_fd, string& response) {
@@ -210,16 +214,42 @@ void redisCommands(const vector<string>& tokens, int client_fd, string& response
         }
     }
     else if (tokens[0] == "XADD") {
-        string stream_key = tokens[1], id = tokens[2];
+        string stream_key = tokens[1], stream_id = tokens[2];
 
-        //add the id
-        streamMap[stream_key]["id"] = id;
+        int max_ms - 1, max_ver = -1;
+        for (const auto& entry : streamMap[stream_key]) {
+            auto& [ms_str, ver_str] = parse_entry_id(entry["id"]);
 
-        for (int i = 3;i < tokens.size();i += 2) {
-            streamMap[stream_key][tokens[i]] = tokens[i + 1];
+            int ms = stoi(ms_str);
+            int v = stoi(ver_str);
+
+            if (ms > max_ms || (ms == max_ms && ver > max_ver)) {
+                max_ms = ms;
+                max_ver = ver;
+            }
         }
 
-        response = resp_bulk_string(id);
+        auto [cur_ms_str, cur_ver_str] = parse_entry_id(stream_id);
+        int cur_ms = stoi(cur_ms_str);
+        int cur_ver = stoi(cur_ver_str);
+
+        // Validate new ID is strictly greater
+        if (cur_ms < max_ms || (cur_ms == max_ms && cur_ver <= max_ver)) {
+            response = "-ERR The ID specified in XADD is equal or smaller than the target stream top item\r\n";
+            return;
+        }
+
+        // build entry
+        unordered_map<string, string> new_entry;
+        new_entry["id"] = stream_id;
+        for (int i = 3;i + 1 < tokens.size();i += 2) {
+            new_entry[tokens[i]] = tokens[i + 1];
+        }
+
+        // append to stream
+        streamMap[stream_key].push_back(move(new_entry));
+
+        response = resp_bulk_string(stream_id);
     }
     else {
         cerr << "Unknown command: " << tokens[0] << "\n";

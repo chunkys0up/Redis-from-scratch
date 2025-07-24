@@ -3,15 +3,16 @@
 #include <string>
 #include <cctype>
 #include <algorithm>
+#include <utility>
 
 using namespace std;
 
 bool isAllDigits(const string& str) {
-    if(str.empty())
+    if (str.empty())
         return false;
 
-    for(auto& c : str) {
-        if(!isdigit(c))
+    for (auto& c : str) {
+        if (!isdigit(c))
             return false;
     }
 
@@ -73,4 +74,18 @@ vector<string> parse_resp_array(const string& input) {
     }
 
     return result;
+}
+
+pair<string, string> parse_entry_id(const string& id) {
+    int index;
+    for (index = 0;i < id.length();i++) {
+        if (id[index] == "-")
+            break;
+    }
+
+    string millisecondsTime = id.substr(0, index);
+    string sequenceNumber = id.substr(index + 1);
+
+    pair<string, string> res = { millisecondsTime, sequenceNumber };
+    return res;
 }

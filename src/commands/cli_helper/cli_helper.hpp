@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <string>
+#include <utility>
 
 using namespace std;
 
@@ -16,6 +17,6 @@ string to_lower(const string& token);
 
 vector<string> parse_resp_array(const string& input);
 
-
+pair<string, string> parse_entry_id(const string& id);
 
 #endif
