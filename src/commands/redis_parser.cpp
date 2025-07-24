@@ -221,8 +221,7 @@ void parse_redis_command(char* buffer, int client_fd) {
 
             // clear the queue
             while (!multiQueue[client_fd].empty()) {
-                multiQueue[client_fd].front();
-                multiQueue[client_fd].empty();
+                multiQueue[client_fd].pop();
             }
         }
         else {
