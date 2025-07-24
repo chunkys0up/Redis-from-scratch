@@ -231,8 +231,8 @@ void redisCommands(const vector<string>& tokens, int client_fd, string& response
 
         auto [cur_ms_str, cur_ver_str] = parse_entry_id(stream_id);
         int cur_ms = stoi(cur_ms_str);
-        int cur_ver = stoi(cur_ver_str);
-
+        int cur_ver = (isAllDigits(cur_ver_str)) ? stoi(cur_ver_str) : max_ver + 1;
+    
         if(cur_ms == 0 && cur_ver == 0) {
             response =  "-ERR The ID specified in XADD must be greater than 0-0\r\n";
             return;
