@@ -195,7 +195,7 @@ void redisCommands(const vector<string>& tokens, int client_fd, string& response
         else
             response = "-ERR value is not an integer or out of range\r\n";
     }
-    else if (!isMultiQueued[client_fd] && [0] == "MULTI") {
+    else if (!isMultiQueued[client_fd] && tokens[0] == "MULTI") {
         isMultiQueued[client_fd] = true;
         response = "+OK\r\n";
     }
