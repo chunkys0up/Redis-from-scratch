@@ -249,6 +249,8 @@ void parse_redis_command(char* buffer, int client_fd) {
         redisCommands(tokens, client_fd, response);
     }
 
+    cout << "To be sent: " << response << "\n";
+
     send(client_fd, response.c_str(), response.size(), 0);
     return;
 }
