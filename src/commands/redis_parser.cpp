@@ -198,11 +198,13 @@ void redisCommands(const vector<string>& tokens, int client_fd, string& response
     }
     else if (tokens[0] == "TYPE") {
         string list_key = tokens[1];
-        if (redisMap[list_key] == "")
-            response = "+none\r\n";
-        else if(streamMap.find(list_key) != streamMap.end()) {
+        if (streamMap.find(list_key) != streamMap.end()) {
             response = "+stream\r\n";
-        } else {
+        }
+        else if (redisMap[list_key] == "") {
+            response = "+none\r\n";
+        }
+        else {
             response = "+string\r\n";
         }
     }
@@ -211,8 +213,8 @@ void redisCommands(const vector<string>& tokens, int client_fd, string& response
 
         //add the id
         streamMap[stream_key]["id"] = id;
-        
-        for(int i = 3;i < tokens.size();i += 2) {
+
+        for (int i = 3;i < tokens.size();i += 2) {
             streamMap[stream_key][tokens[i]] = tokens[i + 1];
         }
 
