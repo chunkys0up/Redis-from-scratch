@@ -222,6 +222,9 @@ void parse_redis_command(char* buffer, int client_fd) {
             if (!isMultiQueued) {
                 response = "-ERR EXEC without MULTI\r\n";
             }
+            else if (multiQueue.empty()) {
+                response = "*0\r\n";
+            }
             else {
                 while (!multiQueue.empty()) {
                     string nestedResponse = "";
