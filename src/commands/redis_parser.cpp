@@ -101,8 +101,8 @@ void redisCommands(const vector<string>& tokens, int client_fd, string& response
         }
 
         // return number of elements in RESP Integer format
-        int size = listMap[list_key].size();
-        response = ":" + to_string(size) + "\r\n";
+        //int size = listMap[list_key].size();
+        response = ":" + to_string(listMap[list_key].size()) + "\r\n";
     }
     else if (tokens[0] == "LRANGE") {
         string list_key = tokens[1];
@@ -296,7 +296,7 @@ void parse_redis_command(char* buffer, int client_fd) {
         redisCommands(tokens, client_fd, response);
     }
 
-    cout << "response: " << response << "\n";
+    //cout << "response: " << response << "\n";
 
     send(client_fd, response.c_str(), response.size(), 0);
     return;
