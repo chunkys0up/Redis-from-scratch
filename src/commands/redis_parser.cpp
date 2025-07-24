@@ -218,14 +218,14 @@ void redisCommands(const vector<string>& tokens, int client_fd, string& response
 
         int max_ms = -1, max_ver = -1;
         for (const auto& entry : streamMap[stream_key]) {
-            auto& [ms_str, ver_str] = parse_entry_id(entry.at("id"));
+            auto [ms_str, ver_str] = parse_entry_id(entry.at("id"));
 
             int ms = stoi(ms_str);
             int v = stoi(ver_str);
 
-            if (ms > max_ms || (ms == max_ms && ver > max_ver)) {
+            if (ms > max_ms || (ms == max_ms && v > max_ver)) {
                 max_ms = ms;
-                max_ver = ver;
+                max_ver = v;
             }
         }
 
