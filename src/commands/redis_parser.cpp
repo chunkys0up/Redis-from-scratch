@@ -216,7 +216,7 @@ void redisCommands(const vector<string>& tokens, int client_fd, string& response
     else if (tokens[0] == "XADD") {
         string stream_key = tokens[1], stream_id = tokens[2];
 
-        int max_ms - 1, max_ver = -1;
+        int max_ms = -1, max_ver = -1;
         for (const auto& entry : streamMap[stream_key]) {
             auto& [ms_str, ver_str] = parse_entry_id(entry["id"]);
 
