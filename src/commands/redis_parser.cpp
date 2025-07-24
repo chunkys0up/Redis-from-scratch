@@ -196,6 +196,13 @@ void redisCommands(const vector<string>& tokens, int client_fd, string& response
         isMultiQueued[client_fd] = true;
         response = "+OK\r\n";
     }
+    else if (tokens[0] == "TYPE") {
+        string list_key = tokens[1];
+        if (redisMap[list_key] == "")
+            response = "+none\r\n";
+        else
+            response = "+string\r\n";
+    }
     else {
         cerr << "Unknown command: " << tokens[0] << "\n";
         close(client_fd);
@@ -221,7 +228,7 @@ void parse_redis_command(char* buffer, int client_fd) {
             while (!multiQueue[client_fd].empty()) {
                 multiQueue[client_fd].pop();
             }
-            
+
             response = "+OK\r\n";
             isMultiQueued[client_fd] = false;
         }
