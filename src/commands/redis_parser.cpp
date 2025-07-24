@@ -75,6 +75,9 @@ void redisCommands(const vector<string>& tokens, int client_fd, string& response
             else
                 response = "$-1\r\n";
         }
+        else {
+            response = "$-1\r\n";
+        }
 
     }
     else if (tokens[0] == "RPUSH" || tokens[0] == "LPUSH" || tokens[0] == "LLEN") {
@@ -246,11 +249,8 @@ void parse_redis_command(char* buffer, int client_fd) {
         response = "+QUEUED\r\n";
     }
     else {
-        cout << "Went to redisCommands\n";
         redisCommands(tokens, client_fd, response);
     }
-
-    cout << "To be sent: " << response << "\n";
 
     send(client_fd, response.c_str(), response.size(), 0);
     return;
