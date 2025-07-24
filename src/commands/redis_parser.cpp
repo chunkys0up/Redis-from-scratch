@@ -59,7 +59,7 @@ void registeredCommands(const vector<string>& tokens, string& response, int clie
     else if (tokens[0] == "LLEN") {
         handleLLEN(tokens, response, listMap);
     }
-    else if (tokens[0] == "LLRANGE") {
+    else if (tokens[0] == "LRANGE") {
         handleLLRANGE(tokens, response, listMap);
     }
     else if (tokens[0] == "LPOP") {
