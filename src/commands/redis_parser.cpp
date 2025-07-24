@@ -26,16 +26,16 @@ using namespace std::chrono;
 
 unordered_map<int, bool> isMultiQueued;
 unordered_map<int, queue<string>> multiQueue;
-//queue<string> multiQueue;
 
 unordered_map<string, string> redisMap;
 unordered_map<string, steady_clock::time_point> expiryMap;
 
 unordered_map<string, vector<string>> listMap;
-
 unordered_map<string, condition_variable> cvMap;
 unordered_map<string, mutex> mtxMap;
 unordered_map<string, queue<int>> waitingClients;
+
+unordered_map<string, unordered_map<string, string>> streamMap;
 
 
 void redisCommands(const vector<string>& tokens, int client_fd, string& response) {
@@ -200,8 +200,23 @@ void redisCommands(const vector<string>& tokens, int client_fd, string& response
         string list_key = tokens[1];
         if (redisMap[list_key] == "")
             response = "+none\r\n";
-        else
+        else if(streamMap.find(list_key) != streamMap.end()) {
+            response = "+stream\r\n";
+        } else {
             response = "+string\r\n";
+        }
+    }
+    else if (tokens[0] == "XADD") {
+        string stream_key = tokens[1], id = tokens[2];
+
+        //add the id
+        streamMap[stream_key]["id"] = id;
+        
+        for(int i = 3;i < tokens.size();i += 2) {
+            streamMap[stream_key][tokens[i]] = tokens[i + 1];
+        }
+
+        response = resp_bulk_string(id);
     }
     else {
         cerr << "Unknown command: " << tokens[0] << "\n";

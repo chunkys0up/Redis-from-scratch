@@ -19,7 +19,7 @@ bool isAllDigits(const string& str) {
 }
 
 string resp_bulk_string(const string& data) {
-    return "$" + to_string(data.size()) + "\r\n" + data + "\r\n";
+    return "$" + to_string(data.length()) + "\r\n" + data + "\r\n";
 }
 
 string lrange_bulk_string(const vector<string>& data) {
