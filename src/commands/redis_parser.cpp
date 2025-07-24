@@ -239,7 +239,7 @@ void parse_redis_command(char* buffer, int client_fd) {
 
                 // call function
                 redisCommands(nestedTokens, client_fd, nestedResponse);
-                res.push_back(parse_resp_array(nestedResponse));
+                res.push_back(parse_resp_array(nestedResponse)[0]);
 
                 // send to server
                 send(client_fd, nestedResponse.c_str(), nestedResponse.size(), 0);
