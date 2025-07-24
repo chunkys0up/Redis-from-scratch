@@ -242,7 +242,7 @@ void parse_redis_command(char* buffer, int client_fd) {
                 results.push_back(nestedResponse);
 
                 // send to server
-                send(client_fd, nestedResponse.c_str(), nestedResponse.size(), 0);
+                //send(client_fd, nestedResponse.c_str(), nestedResponse.size(), 0);
             }
             isMultiQueued[client_fd] = false;
 
