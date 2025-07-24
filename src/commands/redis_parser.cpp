@@ -246,6 +246,7 @@ void parse_redis_command(char* buffer, int client_fd) {
     }
     else if (isMultiQueued) {
         multiQueue.push(request);
+        response = "+QUEUED\r\n";
     }
     else {
         redisCommands(tokens, client_fd, response);
