@@ -127,11 +127,14 @@ void redisCommands(const vector<string>& tokens, int client_fd, string& response
         }
         else {
             vector<string> res;
+            int count = stoi(tokens[2]);
+            int n = min(count, (int)listMap[list_key].size());
 
-            for (int i = 1;i <= stoi(tokens[2]) && i < listMap[list_key].size();i++) {
+            for (int i = 0; i < n; i++) {
                 res.push_back(listMap[list_key][0]);
                 listMap[list_key].erase(listMap[list_key].begin());
             }
+
             response = lrange_bulk_string(res);
         }
     }
@@ -236,7 +239,8 @@ void parse_redis_command(char* buffer, int client_fd) {
                 }
                 isMultiQueued = false;
             }
-        } else {
+        }
+        else {
             redisCommands(tokens, client_fd, response);
         }
     }
