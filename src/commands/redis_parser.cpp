@@ -223,6 +223,7 @@ void parse_redis_command(char* buffer, int client_fd) {
                 response = "-ERR EXEC without MULTI\r\n";
             }
             else if (multiQueue.empty()) { // called MULTI but too soon
+                cout << "EXEC TOO SOON\n";
                 response = "*0\r\n";
                 isMultiQueued = false;
             }
