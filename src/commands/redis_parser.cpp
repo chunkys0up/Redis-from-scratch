@@ -233,6 +233,11 @@ void redisCommands(const vector<string>& tokens, int client_fd, string& response
         int cur_ms = stoi(cur_ms_str);
         int cur_ver = stoi(cur_ver_str);
 
+        if(cur_ms == 0 && cur_ver == 0) {
+            response =  "-ERR The ID specified in XADD must be greater than 0-0\r\n";
+            return;
+        }
+
         // Validate new ID is strictly greater
         if (cur_ms < max_ms || (cur_ms == max_ms && cur_ver <= max_ver)) {
             response = "-ERR The ID specified in XADD is equal or smaller than the target stream top item\r\n";
