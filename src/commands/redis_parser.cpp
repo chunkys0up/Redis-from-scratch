@@ -219,6 +219,7 @@ void parse_redis_command(char* buffer, int client_fd) {
         }
 
         if (tokens[0] == "EXEC") {
+            cout << "checking... if tokens work\n";
             if (!isMultiQueued) {
                 response = "-ERR EXEC without MULTI\r\n";
             }
@@ -229,7 +230,7 @@ void parse_redis_command(char* buffer, int client_fd) {
             }
             else {
                 cout << "Maybe misinput\n";
-                
+
                 while (!multiQueue.empty()) {
                     string nestedResponse = "";
 
