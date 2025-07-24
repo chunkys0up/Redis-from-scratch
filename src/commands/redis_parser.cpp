@@ -227,7 +227,7 @@ void parse_redis_command(char* buffer, int client_fd) {
             isMultiQueued[client_fd] = false;
         }
         else { // clear the queue
-            vector<string> res;
+            vector<string> results;
 
             while (!multiQueue[client_fd].empty()) {
                 string nestedResponse = "";
@@ -239,14 +239,16 @@ void parse_redis_command(char* buffer, int client_fd) {
 
                 // call function
                 redisCommands(nestedTokens, client_fd, nestedResponse);
-                res.push_back(parse_resp_array(nestedResponse)[0]);
+                results.push_back(nestedResponse);
 
                 // send to server
                 send(client_fd, nestedResponse.c_str(), nestedResponse.size(), 0);
             }
             isMultiQueued[client_fd] = false;
 
-            response = lrange_bulk_string(res);
+            response = "*" + to_strign(results.size()) + "\r\n";
+            for (auto& r : results)
+                response += r;
         }
     }
     else if (isMultiQueued[client_fd]) {
