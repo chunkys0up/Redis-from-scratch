@@ -214,7 +214,7 @@ void parse_redis_command(char* buffer, int client_fd) {
         return;
     }
 
-    if (tokens[0] == "EXEC") {
+    else if (tokens[0] == "EXEC") {
         if (!isMultiQueued) {
             response = "-ERR EXEC without MULTI\r\n";
         }
@@ -241,7 +241,7 @@ void parse_redis_command(char* buffer, int client_fd) {
             isMultiQueued = false;
         }
     }
-    else if (isMultiQueued) {
+    else if (tokens[0] != "GET" && isMultiQueued) {
         multiQueue.push(request);
         response = "+QUEUED\r\n";
     }
