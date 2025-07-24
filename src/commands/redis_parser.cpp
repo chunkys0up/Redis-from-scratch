@@ -98,16 +98,17 @@ void parse_redis_command(char* buffer, int client_fd) {
             response = "+OK\r\n";
         }
         else if (tokens[0] == "EXEC") {
-            if(!isMultiQueued) {
-                response = 
+            if (!isMultiQueued) {
+                response = "-ERR EXEC without MULTI\r\n";
             }
+            else {
+                while (!multiQueue.empty()) {
+                    string req = multiQueue.front();
+                    multiQueue.pop();
 
-            while (!multiQueue.empty()) {
-                string req = multiQueue.front();
-                multiQueue.pop();
-
-                vector<string> cmdTokens = parse_resp_array(req);
-                registeredCommands(cmdTokens, response, client_fd);
+                    vector<string> cmdTokens = parse_resp_array(req);
+                    registeredCommands(cmdTokens, response, client_fd);
+                }
             }
         }
         else {
