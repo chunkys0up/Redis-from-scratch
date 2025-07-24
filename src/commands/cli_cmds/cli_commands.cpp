@@ -92,7 +92,7 @@ void handleLLEN(const vector<string>& tokens, string& response, unordered_map<st
     response = ":" + to_string(listMap[list_key].size()) + "\r\n";
 }
 
-void handleLLRANGE(const vector<string>& tokens, string& response, unordered_map<string, vector<string>>& listMap) {
+void handleLRANGE(const vector<string>& tokens, string& response, unordered_map<string, vector<string>>& listMap) {
     string list_key = tokens[1];
     int start = stoi(tokens[2]), end = stoi(tokens[3]);
 
@@ -116,7 +116,6 @@ void handleLPOP(const vector<string>& tokens, string& response, unordered_map<st
     if (listMap[list_key].size() == 0)
         response = "$-1\r\n";
     else if (tokens.size() == 2) {
-        cout << "token: " << tokens[2] << "\n";
         response = resp_bulk_string(listMap[list_key][0]);
         listMap[list_key].erase(listMap[list_key].begin());
     }

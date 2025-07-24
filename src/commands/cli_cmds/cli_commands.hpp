@@ -23,7 +23,7 @@ void handleLPUSH(const std::vector<std::string>& tokens, std::string& response, 
 
 void handleLLEN(const std::vector<std::string>& tokens, std::string& response, std::unordered_map<std::string, std::vector<std::string>>& listMap);
 
-void handleLLRANGE(const std::vector<std::string>& tokens, std::string& response, std::unordered_map<std::string, std::vector<std::string>>& listMap);
+void handleLRANGE(const std::vector<std::string>& tokens, std::string& response, std::unordered_map<std::string, std::vector<std::string>>& listMap);
 
 void handleLPOP(const std::vector<std::string>& tokens, std::string& response, std::unordered_map<std::string, std::vector<std::string>>& listMap);
 
