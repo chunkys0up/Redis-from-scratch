@@ -254,7 +254,7 @@ void redisCommands(const vector<string>& tokens, int client_fd, string& response
         // append to stream
         streamMap[stream_key].push_back(move(new_entry));
 
-        response = resp_bulk_string(stream_id);
+        response = resp_bulk_string(cur_ms_str + "-" + to_string(cur_ver));
     }
     else {
         cerr << "Unknown command: " << tokens[0] << "\n";
