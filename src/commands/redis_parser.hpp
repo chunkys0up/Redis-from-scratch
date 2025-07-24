@@ -13,7 +13,7 @@ using namespace std;
 using namespace std::chrono;
 
 extern unordered_map<int, bool> isMultiQueued;
-extern unordered_map<int, queue<int>> multiQueue;
+extern unordered_map<int, queue<string>> multiQueue;
 
 extern unordered_map<string, string> redisMap;
 extern unordered_map<string, steady_clock::time_point> expiryMap;

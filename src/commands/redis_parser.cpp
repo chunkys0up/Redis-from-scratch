@@ -25,7 +25,7 @@ using namespace std;
 using namespace std::chrono;
 
 unordered_map<int, bool> isMultiQueued;
-unordered_map<int, queue<int>> multiQueue;
+unordered_map<int, queue<string>> multiQueue;
 //queue<string> multiQueue;
 
 unordered_map<string, string> redisMap;
