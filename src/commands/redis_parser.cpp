@@ -209,50 +209,46 @@ void parse_redis_command(char* buffer, int client_fd) {
 
     string response = "";
 
-    if (isMultiQueued) {
+    vector<string> tokens = parse_resp_array(request);
+    if (tokens.empty()) {
+        cerr << "Invalid request format\n";
+        close(client_fd);
+        return;
+    }
+
+    if (tokens[0] == "EXEC") {
+        if (!isMultiQueued) {
+            response = "-ERR EXEC without MULTI\r\n";
+        }
+        else if (multiQueue.empty()) { // called MULTI but too soon
+            response = "*0\r\n";
+            isMultiQueued = false;
+        }
+        else {
+            cout << "Maybe misinput\n";
+
+            while (!multiQueue.empty()) {
+                string nestedResponse = "";
+
+                string cmd = multiQueue.front();
+                multiQueue.pop();
+
+                vector<string> nestedTokens = parse_resp_array(cmd);
+
+                // call function
+                redisCommands(nestedTokens, client_fd, nestedResponse);
+
+                // send to server
+                send(client_fd, nestedResponse.c_str(), nestedResponse.size(), 0);
+            }
+            isMultiQueued = false;
+        }
+    }
+    else if (isMultiQueued) {
         multiQueue.push(request);
     }
     else {
-        vector<string> tokens = parse_resp_array(request);
-        if (tokens.empty()) {
-            cerr << "Invalid request format\n";
-            close(client_fd);
-            return;
-        }
-
-        if (request == "EXEC") {
-            cout << "checking... if tokens work\n";
-            if (!isMultiQueued) {
-                response = "-ERR EXEC without MULTI\r\n";
-            }
-            else if (multiQueue.empty()) { // called MULTI but too soon
-                cout << "EXEC TOO SOON\n";
-                response = "*0\r\n";
-                isMultiQueued = false;
-            }
-            else {
-                cout << "Maybe misinput\n";
-
-                while (!multiQueue.empty()) {
-                    string nestedResponse = "";
-
-                    string cmd = multiQueue.front();
-                    multiQueue.pop();
-
-                    vector<string> nestedTokens = parse_resp_array(cmd);
-
-                    // call function
-                    redisCommands(nestedTokens, client_fd, nestedResponse);
-
-                    // send to server
-                    send(client_fd, nestedResponse.c_str(), nestedResponse.size(), 0);
-                }
-                isMultiQueued = false;
-            }
-        }
-        else {
-            redisCommands(tokens, client_fd, response);
-        }
+        redisCommands(tokens, client_fd, response);
     }
 
     send(client_fd, response.c_str(), response.size(), 0);
