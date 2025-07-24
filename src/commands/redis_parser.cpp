@@ -246,7 +246,7 @@ void parse_redis_command(char* buffer, int client_fd) {
             }
             isMultiQueued[client_fd] = false;
 
-            response = "*" + to_strign(results.size()) + "\r\n";
+            response = "*" + to_string(results.size()) + "\r\n";
             for (auto& r : results)
                 response += r;
         }
