@@ -222,8 +222,9 @@ void parse_redis_command(char* buffer, int client_fd) {
             if (!isMultiQueued) {
                 response = "-ERR EXEC without MULTI\r\n";
             }
-            else if (multiQueue.empty()) {
+            else if (multiQueue.empty()) { // called MULTI but too soon
                 response = "*0\r\n";
+                isMultiQueued = false;
             }
             else {
                 while (!multiQueue.empty()) {
