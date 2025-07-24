@@ -26,7 +26,7 @@ string lrange_bulk_string(const vector<string>& data) {
     string response = "*" + to_string(data.size()) + "\r\n";
 
     for (auto& element : data)
-        response += resp_bulk_string(element);
+        response += "$" + to_string(element.length()) + "\r\n" + element + "\r\n";
 
     return response;
 }
