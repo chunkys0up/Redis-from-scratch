@@ -221,7 +221,7 @@ void parse_redis_command(char* buffer, int client_fd) {
             }
             else {
                 while (!multiQueue.empty()) {
-                    string nestedResponse = "":
+                    string nestedResponse = "";
 
                     string cmd = multiQueue.front();
                     multiQueue.pop();
