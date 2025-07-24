@@ -205,8 +205,6 @@ void redisCommands(const vector<string>& tokens, int client_fd, string& response
 // Command line
 void parse_redis_command(char* buffer, int client_fd) {
     string request(buffer);
-    cout << request << "\n";
-
     string response = "";
 
     vector<string> tokens = parse_resp_array(request);
@@ -225,7 +223,6 @@ void parse_redis_command(char* buffer, int client_fd) {
             isMultiQueued = false;
         }
         else {
-            cout << "Maybe misinput\n";
 
             while (!multiQueue.empty()) {
                 string nestedResponse = "";
