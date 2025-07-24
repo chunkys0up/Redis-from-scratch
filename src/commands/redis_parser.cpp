@@ -217,12 +217,13 @@ void parse_redis_command(char* buffer, int client_fd) {
     if (tokens[0] == "DISCARD") {
 
         if (isMultiQueued[client_fd]) {
-            response = "+OK\r\n";
-
             // clear the queue
             while (!multiQueue[client_fd].empty()) {
                 multiQueue[client_fd].pop();
             }
+            
+            response = "+OK\r\n";
+            isMultiQueued[client_fd] = false;
         }
         else {
             response = "-ERR DISCARD without MULTI\r\n";
