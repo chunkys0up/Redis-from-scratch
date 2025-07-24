@@ -228,6 +228,8 @@ void parse_redis_command(char* buffer, int client_fd) {
                 isMultiQueued = false;
             }
             else {
+                cout << "Maybe misinput\n";
+                
                 while (!multiQueue.empty()) {
                     string nestedResponse = "";
 
