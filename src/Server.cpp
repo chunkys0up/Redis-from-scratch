@@ -23,8 +23,6 @@ void handle_client(int client_fd) {
       return;
     }
 
-    std::cout << buffer << "\n";
-
     parse_redis_command(buffer, client_fd);
   }
 }
