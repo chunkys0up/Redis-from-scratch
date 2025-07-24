@@ -37,6 +37,7 @@ unordered_map<string, condition_variable> cvMap;
 unordered_map<string, mutex> mtxMap;
 unordered_map<string, queue<int>> waitingClients;
 
+
 void redisCommands(const vector<string>& tokens, int client_fd, string& response) {
 
     if (tokens[0] == "PING") {
@@ -162,8 +163,6 @@ void redisCommands(const vector<string>& tokens, int client_fd, string& response
             vector<string> res = { list_key, listMap[list_key][0] };
             listMap[list_key].erase(listMap[list_key].begin());
             response = lrange_bulk_string(res);
-
-            cout << "Valid BLPOP\n";
         }
         else if (timed_out) {
             response = "$-1\r\n";
@@ -172,8 +171,6 @@ void redisCommands(const vector<string>& tokens, int client_fd, string& response
             vector<string> res = { list_key, listMap[list_key][0] };
             listMap[list_key].erase(listMap[list_key].begin());
             response = lrange_bulk_string(res);
-
-            cout << "Valid BLPOP\n";
         }
     }
     else if (tokens[0] == "INCR") {
@@ -217,7 +214,22 @@ void parse_redis_command(char* buffer, int client_fd) {
         close(client_fd);
         return;
     }
+    if (tokens[0] == "DISCARD") {
 
+        if (isMultiQueued[client_fd]) {
+            response = "+OK\r\n";
+
+            // clear the queue
+            while (!multiQueue[client_fd].empty()) {
+                multiQueue.front();
+                multiQueue.empty();
+            }
+        }
+        else {
+            response = "-ERR DISCARD without MULTI\r\n";
+        }
+
+    }
     else if (tokens[0] == "EXEC") {
         if (!isMultiQueued[client_fd]) {
             response = "-ERR EXEC without MULTI\r\n";
