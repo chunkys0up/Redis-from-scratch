@@ -24,8 +24,9 @@
 using namespace std;
 using namespace std::chrono;
 
-bool isMultiQueued = false;
-queue<string> multiQueue;
+unordered_map<int, bool> isMultiQueued;
+unordered_map<int, queue<string>> multiQueue;
+//queue<string> multiQueue;
 
 unordered_map<string, string> redisMap;
 unordered_map<string, steady_clock::time_point> expiryMap;
@@ -194,8 +195,8 @@ void redisCommands(const vector<string>& tokens, int client_fd, string& response
         else
             response = "-ERR value is not an integer or out of range\r\n";
     }
-    else if (!isMultiQueued && tokens[0] == "MULTI") {
-        isMultiQueued = true;
+    else if (!isMultiQueued[client_fd] && [0] == "MULTI") {
+        isMultiQueued[client_fd] = true;
         response = "+OK\r\n";
     }
     else {
@@ -218,20 +219,20 @@ void parse_redis_command(char* buffer, int client_fd) {
     }
 
     else if (tokens[0] == "EXEC") {
-        if (!isMultiQueued) {
+        if (!isMultiQueued[client_fd]) {
             response = "-ERR EXEC without MULTI\r\n";
         }
-        else if (multiQueue.empty()) { // called MULTI but too soon
+        else if (multiQueue[client_fd].empty()) { // called MULTI but too soon
             response = "*0\r\n";
-            isMultiQueued = false;
+            isMultiQueued[client_fd] = false;
         }
         else {
 
-            while (!multiQueue.empty()) {
+            while (!multiQueue[client_fd].empty()) {
                 string nestedResponse = "";
 
-                string cmd = multiQueue.front();
-                multiQueue.pop();
+                string cmd = multiQueue[client_fd].front();
+                multiQueue[client_fd].pop();
 
                 vector<string> nestedTokens = parse_resp_array(cmd);
 
@@ -241,11 +242,11 @@ void parse_redis_command(char* buffer, int client_fd) {
                 // send to server
                 send(client_fd, nestedResponse.c_str(), nestedResponse.size(), 0);
             }
-            isMultiQueued = false;
+            isMultiQueued[client_fd] = false;
         }
     }
-    else if (tokens[0] != "GET" && isMultiQueued) {
-        multiQueue.push(request);
+    else if (isMultiQueued[client_fd]) {
+        multiQueue[client_fd].push(request);
         response = "+QUEUED\r\n";
     }
     else {
