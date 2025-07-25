@@ -216,25 +216,33 @@ void redisCommands(const vector<string>& tokens, int client_fd, string& response
     else if (tokens[0] == "XADD") {
         string stream_key = tokens[1], stream_id = tokens[2];
 
-        int max_ms = -1, max_ver = -1;
-        for (const auto& entry : streamMap[stream_key]) {
-            auto [ms_str, ver_str] = parse_entry_id(entry.at("id"));
+        auto [cur_ms_str, cur_ver_str] = parse_entry_id(stream_id);
 
-            int ms = stoi(ms_str);
-            int v = stoi(ver_str);
+        cout << "starting loop\n";
 
-            if (ms > max_ms || (ms == max_ms && v > max_ver)) {
-                max_ms = ms;
-                max_ver = v;
-            }
+        int max_ms = 0, max_ver = -1;
+        if (!streamMap[stream_key].empty()) {
+            const auto& last_entry = streamMap[stream_key].back();
+            auto [ms_str, ver_str] = parse_entry_id(last_entry.at("id"));
+
+            max_ms = stoi(ms_str);
+            if (cur_ms_str == ms_str)
+                max_ver = max(max_ver, stoi(ver_str));
         }
 
-        auto [cur_ms_str, cur_ver_str] = parse_entry_id(stream_id);
+        cout << "Passed loop\n";
+
         int cur_ms = stoi(cur_ms_str);
-        int cur_ver = (isAllDigits(cur_ver_str)) ? stoi(cur_ver_str) : max_ver + 1;
-    
-        if(cur_ms == 0 && cur_ver == 0) {
-            response =  "-ERR The ID specified in XADD must be greater than 0-0\r\n";
+        int cur_ver;
+        if (cur_ver_str == "*") {
+            cur_ver = (cur_ms_str == "0" && max_ver == -1) ? 1 : max_ver + 1;
+        }
+        else {
+            cur_ver = stoi(cur_ver_str);
+        }
+
+        if (cur_ms_str == "0" && cur_ver_str == "0") {
+            response = "-ERR The ID specified in XADD must be greater than 0-0\r\n";
             return;
         }
 
@@ -244,9 +252,13 @@ void redisCommands(const vector<string>& tokens, int client_fd, string& response
             return;
         }
 
+        cout << "ms: " << cur_ms << " ver: " << cur_ver << "\n";
+
         // build entry
         unordered_map<string, string> new_entry;
-        new_entry["id"] = stream_id;
+        string new_stream_key = to_string(cur_ms) + "-" + to_string(cur_ver);
+
+        new_entry["id"] = new_stream_key;
         for (int i = 3;i + 1 < tokens.size();i += 2) {
             new_entry[tokens[i]] = tokens[i + 1];
         }
@@ -254,7 +266,7 @@ void redisCommands(const vector<string>& tokens, int client_fd, string& response
         // append to stream
         streamMap[stream_key].push_back(move(new_entry));
 
-        response = resp_bulk_string(cur_ms_str + "-" + to_string(cur_ver));
+        response = resp_bulk_string(new_stream_key);
     }
     else {
         cerr << "Unknown command: " << tokens[0] << "\n";
