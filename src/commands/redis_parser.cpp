@@ -324,7 +324,7 @@ void redisCommands(const vector<string>& tokens, int client_fd, string& response
         }
 
         // build the response
-        response = parse_stream(streams, streamMap);
+        response = parse_streams(streams, streamMap);
     }
     else {
         cerr << "Unknown command: " << tokens[0] << "\n";

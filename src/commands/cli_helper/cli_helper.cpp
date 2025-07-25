@@ -111,7 +111,7 @@ string parse_entry(unordered_map<string, string> streamMap) {
     return response;
 }
 
-string parse_stream(vector<pair<string, string>> streams, unordered_map<string, vector<unordered_map<string, string>>> streamMap) {
+string parse_streams(vector<pair<string, string>> streams, unordered_map<string, vector<unordered_map<string, string>>> streamMap) {
     string response = "*" + to_string(streams.size()) + "\r\n";
     
     // add the key and create the field
