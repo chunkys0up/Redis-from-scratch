@@ -296,14 +296,14 @@ void redisCommands(const vector<string>& tokens, int client_fd, string& response
         for (auto& entry : streamMap[stream_key]) {
             string id = entry["id"];
 
-            if (start_id <= id && id <= end_id) {
+            if ((end_id == "+" && start_id <= id) || (start_id <= id && id <= end_id)) {
                 matching_entries.push_back(entry);
             }
         }
 
         response = "*" + to_string(matching_entries.size()) + "\r\n";
         for (auto& entry : matching_entries) {
-            response += parse_entry(entry); 
+            response += parse_entry(entry);
         }
     }
 
