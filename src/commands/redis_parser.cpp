@@ -220,6 +220,7 @@ void redisCommands(const vector<string>& tokens, int client_fd, string& response
 
         cout << "starting loop\n";
 
+        // -1 == empty
         int max_ms = 0, max_ver = -1;
         if (!streamMap[stream_key].empty()) {
             const auto& last_entry = streamMap[stream_key].back();
