@@ -306,7 +306,26 @@ void redisCommands(const vector<string>& tokens, int client_fd, string& response
             response += parse_entry(entry);
         }
     }
+    else if (tokens[0] == "XREAD") {
+        queue<string> list_keys;
+        int keys = (tokens.size() - 2) / 2, count = 0;
 
+        vector<pair<string, string>> streams;
+
+        for (int i = 2;i < tokens.size();i++) {
+            if (count < keys) {
+                list_keys.push(tokens[i]);
+                count++;
+            }
+            else {
+                string key = list_keys.front(); list_keys.pop();
+                streams.push_back({ key, tokens[i] });
+            }
+        }
+
+        // build the response
+        response = parse_stream(streams, streamMap);
+    }
     else {
         cerr << "Unknown command: " << tokens[0] << "\n";
         close(client_fd);

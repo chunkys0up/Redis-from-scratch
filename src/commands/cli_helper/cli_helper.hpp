@@ -22,4 +22,6 @@ pair<string, string> parse_entry_id(const string& id);
 
 string parse_entry(unordered_map<string, string> streamMap);
 
+string parse_stream(vector<pair<string, string>> streams, unordered_map<string, unordered_map<string, string>> streamMap);
+
 #endif
