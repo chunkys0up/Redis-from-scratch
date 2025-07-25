@@ -4,7 +4,7 @@
 #include <cctype>
 #include <algorithm>
 #include <utility>
-
+#include <unordered_map>
 using namespace std;
 
 bool isAllDigits(const string& str) {
@@ -27,7 +27,7 @@ string lrange_bulk_string(const vector<string>& data) {
     string response = "*" + to_string(data.size()) + "\r\n";
 
     for (auto& element : data)
-        response += "$" + to_string(element.length()) + "\r\n" + element + "\r\n";
+        response += resp_bulk_string(element);
 
     return response;
 }
@@ -88,4 +88,25 @@ pair<string, string> parse_entry_id(const string& id) {
 
     pair<string, string> res = { millisecondsTime, sequenceNumber };
     return res;
+}
+
+
+string parse_entry(unordered_map<string, string> streamMap) {
+    string response = "*2\r\n";
+
+    // get the id
+    string id = streamMap["id"];
+    response += resp_bulk_string(id);
+
+    // build fields
+    vector<string> res;
+    for(auto& [key, value] : streamMap) {
+        if(key == "id") continue;
+
+        res.push_back(key);
+        res.push_back(value);
+    }
+
+    response += lrange_bulk_string(res);
+    return response;
 }

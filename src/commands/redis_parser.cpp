@@ -286,6 +286,27 @@ void redisCommands(const vector<string>& tokens, int client_fd, string& response
 
         buildEntry(response, tokens, stream_key, cur_ms, cur_ver);
     }
+    else if (tokens[0] == "XRANGE") {
+        string stream_key = tokens[1];
+        string start_id = tokens[2];
+        string end_id = tokens[3];
+
+        vector<unordered_map<string, string>> matching_entries;
+
+        for (auto& entry : streamMap[stream_key]) {
+            string id = entry["id"];
+
+            if (start_id <= id && id <= end_id) {
+                matching_entries.push_back(entry);
+            }
+        }
+
+        response = "*" + to_string(matching_entries.size()) + "\r\n";
+        for (auto& entry : matching_entries) {
+            response += parse_entry(entry); 
+        }
+    }
+
     else {
         cerr << "Unknown command: " << tokens[0] << "\n";
         close(client_fd);
