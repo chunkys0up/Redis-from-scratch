@@ -41,6 +41,22 @@ unordered_map<string, queue<int>> waitingClients;
 
 unordered_map<string, vector<unordered_map<string, string>>> streamMap;
 
+void buildEntry(string& response, const vector<string>& tokens, string stream_key, long long cur_ms, int cur_ver) {
+    // build entry
+
+    unordered_map<string, string> new_entry;
+    string new_stream_key = to_string(cur_ms) + "-" + to_string(cur_ver);
+
+    new_entry["id"] = new_stream_key;
+    for (int i = 3;i + 1 < tokens.size();i += 2) {
+        new_entry[tokens[i]] = tokens[i + 1];
+    }
+
+    // append to stream
+    streamMap[stream_key].push_back(move(new_entry));
+
+    response = resp_bulk_string(new_stream_key);
+}
 
 void redisCommands(const vector<string>& tokens, int client_fd, string& response) {
 
@@ -216,11 +232,27 @@ void redisCommands(const vector<string>& tokens, int client_fd, string& response
     else if (tokens[0] == "XADD") {
         string stream_key = tokens[1], stream_id = tokens[2];
 
+        // check for stream_id == "*"
+        if (stream_id == "*") {
+            //auto generate the ms + sequence number
+
+            long long msTime = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+
+            int latest_version = -1;
+            if (!streamMap[stream_key].empty()) {
+                const auto& last_entry = streamMap[stream_key].back();
+                auto [ms_str, ver_str] = parse_entry_id(last_entry.at("id"));
+
+                latest_version = stoi(ver_str);
+            }
+
+            buildEntry(response, tokens, stream_key, msTime, latest_version + 1);
+            return;
+        }
+
         auto [cur_ms_str, cur_ver_str] = parse_entry_id(stream_id);
 
-        cout << "starting loop\n";
-
-        // -1 == empty
+        // -1 == empty, if 0 then that means there was a past entry
         int max_ms = 0, max_ver = -1;
         if (!streamMap[stream_key].empty()) {
             const auto& last_entry = streamMap[stream_key].back();
@@ -231,11 +263,10 @@ void redisCommands(const vector<string>& tokens, int client_fd, string& response
                 max_ver = max(max_ver, stoi(ver_str));
         }
 
-        cout << "Passed loop\n";
-
         int cur_ms = stoi(cur_ms_str);
         int cur_ver;
         if (cur_ver_str == "*") {
+            // if 0-blank, then we have to set to 1 by default (0-0 isn't allowed, else ms-max_ver + 1)
             cur_ver = (cur_ms_str == "0" && max_ver == -1) ? 1 : max_ver + 1;
         }
         else {
@@ -253,21 +284,7 @@ void redisCommands(const vector<string>& tokens, int client_fd, string& response
             return;
         }
 
-        cout << "ms: " << cur_ms << " ver: " << cur_ver << "\n";
-
-        // build entry
-        unordered_map<string, string> new_entry;
-        string new_stream_key = to_string(cur_ms) + "-" + to_string(cur_ver);
-
-        new_entry["id"] = new_stream_key;
-        for (int i = 3;i + 1 < tokens.size();i += 2) {
-            new_entry[tokens[i]] = tokens[i + 1];
-        }
-
-        // append to stream
-        streamMap[stream_key].push_back(move(new_entry));
-
-        response = resp_bulk_string(new_stream_key);
+        buildEntry(response, tokens, stream_key, cur_ms, cur_ver);
     }
     else {
         cerr << "Unknown command: " << tokens[0] << "\n";
