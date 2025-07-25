@@ -103,8 +103,8 @@ void redisCommands(const vector<string>& tokens, int client_fd, string& response
 
     }
     else if (tokens[0] == "RPUSH" || tokens[0] == "LPUSH" || tokens[0] == "LLEN") {
-
         string list_key = tokens[1];
+        std::unique_lock<std::mutex> lock(mtxMap[list_key]);
 
         for (int i = 2;i < tokens.size();i++) {
             if (tokens[0] == "RPUSH")

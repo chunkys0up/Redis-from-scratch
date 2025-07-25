@@ -118,7 +118,7 @@ string parse_streams(vector<pair<string, string>> streams, unordered_map<string,
 
     for (auto& [key, id] : streams) {
         for(auto& entry : streamMap[key]) {
-            if(id != entry["id"]) continue;
+            if(id > entry["id"]) continue;
 
             response += "*2\r\n" + resp_bulk_string(key) + "*1\r\n" + parse_entry(entry);
         }
