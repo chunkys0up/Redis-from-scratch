@@ -24,4 +24,5 @@ string parse_entry(unordered_map<string, string> streamMap);
 
 string parse_streams(vector<pair<string, string>> streams, unordered_map<string, vector<unordered_map<string, string>>> streamMap);
 
+string resp_block(string stream_key, unordered_map<string, string> last_entry);
 #endif

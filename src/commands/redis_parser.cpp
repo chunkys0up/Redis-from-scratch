@@ -326,29 +326,31 @@ void redisCommands(const vector<string>& tokens, int client_fd, string& response
             unique_lock<mutex> lock(mtxMap[stream_key]);
             streamQueue.push({ client_fd, stream_key });
 
-            bool timed_out = false;
-            if (wait_time == 0) {
-                timed_out = !cvMap[stream_key].wait_for(lock, std::chrono::milliseconds(wait_time), [&]() {
-                    return streamQueue.empty();
-                    });
-            }
-
-            if (timed_out)
-                response = "$-1\r\n";
-
             if (wait_time == 0) {
                 cvMap[stream_key].wait(lock, [&]() {
                     return streamQueue.empty();
                     });
-            }
 
-            if (!streamMap[stream_key].empty()) {
                 string recent_key = sendToBlocked[client_fd];
                 const auto& last_entry = streamMap[recent_key].back();
-                response = "*1\r\n*2\r\n" + resp_bulk_string(stream_key) + "*1\r\n" + parse_entry(last_entry);
+                response = resp_block(stream_key, last_entry);
+                return;
             }
 
-            cout << "response: " << response << "\n";
+
+            bool timed_out = !cvMap[stream_key].wait_for(lock, std::chrono::milliseconds(wait_time), [&]() {
+                return streamQueue.empty();
+                });
+
+            if (timed_out)
+                response = "$-1\r\n";
+            else if (!streamMap[stream_key].empty()) {
+                string recent_key = sendToBlocked[client_fd];
+                const auto& last_entry = streamMap[recent_key].back();
+                response = resp_block(stream_key, last_entry);
+            }
+
+            // cout << "response: " << response << "\n";
             return;
         }
 

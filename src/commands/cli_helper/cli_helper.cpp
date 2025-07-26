@@ -113,16 +113,20 @@ string parse_entry(unordered_map<string, string> streamMap) {
 
 string parse_streams(vector<pair<string, string>> streams, unordered_map<string, vector<unordered_map<string, string>>> streamMap) {
     string response = "*" + to_string(streams.size()) + "\r\n";
-    
+
     // add the key and create the field
 
     for (auto& [key, id] : streams) {
-        for(auto& entry : streamMap[key]) {
-            if(id > entry["id"]) continue;
+        for (auto& entry : streamMap[key]) {
+            if (id > entry["id"]) continue;
 
             response += "*2\r\n" + resp_bulk_string(key) + "*1\r\n" + parse_entry(entry);
         }
     }
 
     return response;
+}
+
+string resp_block(string stream_key, unordered_map<string, string> last_entry) {
+    return "*1\r\n*2\r\n" + resp_bulk_string(stream_key) + "*1\r\n" + parse_entry(last_entry);
 }
