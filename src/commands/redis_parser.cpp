@@ -236,10 +236,8 @@ void redisCommands(const vector<string>& tokens, int client_fd, string& response
     else if (tokens[0] == "XADD") {
         string stream_key = tokens[1], stream_id = tokens[2];
 
-        // check for stream_id == "*"
         if (stream_id == "*") {
             //auto generate the ms + sequence number
-
             long long msTime = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
 
             int latest_version = -1;
@@ -290,7 +288,7 @@ void redisCommands(const vector<string>& tokens, int client_fd, string& response
 
         buildEntry(response, tokens, stream_key, cur_ms, cur_ver);
 
-        // now send to the queued clients
+        // now send to the queued clients if there's any
         while (!streamQueue.empty()) {
             auto [send_client, stream_key] = streamQueue.front();
 
@@ -321,27 +319,32 @@ void redisCommands(const vector<string>& tokens, int client_fd, string& response
         }
     }
     else if (tokens[0] == "XREAD") {
-        string xread_type = tokens[1];
-
-        if (xread_type == "block") {
+        if (tokens[1] == "block") {
             int wait_time = stoi(tokens[2]);
             string stream_key = tokens[4], id = tokens[5];
 
             unique_lock<mutex> lock(mtxMap[stream_key]);
             streamQueue.push({ client_fd, stream_key });
 
-            bool timed_out = !cvMap[stream_key].wait_for(lock, std::chrono::milliseconds(wait_time), [&]() {
-                return streamQueue.empty();
-                });
+            bool timed_out = false;
+            if (wait_time == 0) {
+                timed_out = !cvMap[stream_key].wait_for(lock, std::chrono::milliseconds(wait_time), [&]() {
+                    return streamQueue.empty();
+                    });
+            }
 
             if (timed_out)
                 response = "$-1\r\n";
-            else if (!streamMap[stream_key].empty()) {
+
+            if (wait_time == 0) {
+                cvMap[stream_key].wait(lock, [&]() {
+                    return streamQueue.empty();
+                    });
+            }
+
+            if (!streamMap[stream_key].empty()) {
                 string recent_key = sendToBlocked[client_fd];
-
                 const auto& last_entry = streamMap[recent_key].back();
-                //auto [ms_str, ver_str] = parse_entry_id(last_entry.at("id"));
-
                 response = "*1\r\n*2\r\n" + resp_bulk_string(stream_key) + "*1\r\n" + parse_entry(last_entry);
             }
 
@@ -349,13 +352,11 @@ void redisCommands(const vector<string>& tokens, int client_fd, string& response
             return;
         }
 
-        queue<string> list_keys;
-
         int count = 0;
         int keys = (tokens.size() - 2) / 2;
 
         vector<pair<string, string>> streams;
-
+        queue<string> list_keys;
         for (int i = 2;i < tokens.size();i++) {
             if (count < keys) {
                 list_keys.push(tokens[i]);
