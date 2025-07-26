@@ -40,6 +40,8 @@ unordered_map<string, mutex> mtxMap;
 unordered_map<string, queue<int>> waitingClients;
 
 unordered_map<string, vector<unordered_map<string, string>>> streamMap;
+unordered_map<int, string> sendToBlocked;
+queue<pair<int, string>> streamQueue;
 
 void buildEntry(string& response, const vector<string>& tokens, string stream_key, long long cur_ms, int cur_ver) {
     // build entry
@@ -104,7 +106,7 @@ void redisCommands(const vector<string>& tokens, int client_fd, string& response
     }
     else if (tokens[0] == "RPUSH" || tokens[0] == "LPUSH" || tokens[0] == "LLEN") {
         string list_key = tokens[1];
-        std::unique_lock<std::mutex> lock(mtxMap[list_key]);
+        unique_lock<mutex> lock(mtxMap[list_key]);
 
         for (int i = 2;i < tokens.size();i++) {
             if (tokens[0] == "RPUSH")
@@ -171,10 +173,6 @@ void redisCommands(const vector<string>& tokens, int client_fd, string& response
         unique_lock<mutex> lock(mtxMap[list_key]);
         waitingClients[list_key].push(client_fd);
 
-        bool timed_out = !cvMap[list_key].wait_for(lock, milliseconds((int)(wait_time * 1000)), [&]() {
-            return !listMap[list_key].empty();
-            });
-
         // if wait_time = 0, then it should be infinite
         if (wait_time == 0) {
             cvMap[list_key].wait(lock, [&]() {
@@ -185,13 +183,19 @@ void redisCommands(const vector<string>& tokens, int client_fd, string& response
             listMap[list_key].erase(listMap[list_key].begin());
             response = lrange_bulk_string(res);
         }
-        else if (timed_out) {
-            response = "$-1\r\n";
-        }
         else {
-            vector<string> res = { list_key, listMap[list_key][0] };
-            listMap[list_key].erase(listMap[list_key].begin());
-            response = lrange_bulk_string(res);
+            bool timed_out = !cvMap[list_key].wait_for(lock, milliseconds((int)(wait_time * 1000)), [&]() {
+                return !listMap[list_key].empty();
+                });
+
+            if (timed_out) {
+                response = "$-1\r\n";
+            }
+            else {
+                vector<string> res = { list_key, listMap[list_key][0] };
+                listMap[list_key].erase(listMap[list_key].begin());
+                response = lrange_bulk_string(res);
+            }
         }
     }
     else if (tokens[0] == "INCR") {
@@ -285,6 +289,16 @@ void redisCommands(const vector<string>& tokens, int client_fd, string& response
         }
 
         buildEntry(response, tokens, stream_key, cur_ms, cur_ver);
+
+        // now send to the queued clients
+        while (!streamQueue.empty()) {
+            auto [send_client, stream_key] = streamQueue.front();
+
+            sendToBlocked[send_client] = stream_key;
+            streamQueue.pop();
+            cvMap[stream_key].notify_one();
+        }
+
     }
     else if (tokens[0] == "XRANGE") {
         string stream_key = tokens[1];
@@ -307,8 +321,38 @@ void redisCommands(const vector<string>& tokens, int client_fd, string& response
         }
     }
     else if (tokens[0] == "XREAD") {
+        string xread_type = tokens[1];
+
+        if (xread_type == "block") {
+            int wait_time = stoi(tokens[2]);
+            string stream_key = tokens[4], id = tokens[5];
+
+            unique_lock<mutex> lock(mtxMap[stream_key]);
+            streamQueue.push({ client_fd, stream_key });
+
+            bool timed_out = !cvMap[stream_key].wait_for(lock, std::chrono::milliseconds(wait_time), [&]() {
+                return streamQueue.empty();
+                });
+
+            if (timed_out)
+                response = "$-1\r\n";
+            else if (!streamMap[stream_key].empty()) {
+                string recent_key = sendToBlocked[client_fd];
+
+                const auto& last_entry = streamMap[recent_key].back();
+                //auto [ms_str, ver_str] = parse_entry_id(last_entry.at("id"));
+
+                response = "*1\r\n*2\r\n" + resp_bulk_string(stream_key) + "*1\r\n" + parse_entry(last_entry);
+            }
+
+            cout << "response: " << response << "\n";
+            return;
+        }
+
         queue<string> list_keys;
-        int keys = (tokens.size() - 2) / 2, count = 0;
+
+        int count = 0;
+        int keys = (tokens.size() - 2) / 2;
 
         vector<pair<string, string>> streams;
 

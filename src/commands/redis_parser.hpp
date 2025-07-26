@@ -8,6 +8,7 @@
 #include <queue>
 #include <condition_variable>
 #include<mutex>
+#include <utility>
 
 using namespace std;
 using namespace std::chrono;
@@ -24,6 +25,9 @@ extern unordered_map<string, mutex> mtxMap;
 extern unordered_map<string, queue<int>> waitingClients;
 
 extern unordered_map<string, vector<unordered_map<string, string>>> streamMap;
+extern unordered_map<int, string> sendToBlocked;
+extern queue<pair<int, string>> streamQueue;
+
 
 // check for ping, if not then check for echo command
 void parse_redis_command(char* buffer, int client_fd);
