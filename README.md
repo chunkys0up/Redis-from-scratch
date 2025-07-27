@@ -1,33 +1,74 @@
-[![progress-banner](https://backend.codecrafters.io/progress/redis/ea9da081-83a0-4baa-bdd7-b677919c7580)](https://app.codecrafters.io/users/codecrafters-bot?r=2qF)
+# MiniRedis: A Custom Redis Clone in C++
 
-This is a starting point for C++ solutions to the
-["Build Your Own Redis" Challenge](https://codecrafters.io/challenges/redis).
+This is a custom Redis server implementation written in C++. It supports a wide range of commands—from basic strings and lists to stream and transaction handling—modeled closely after real Redis behavior.
 
-In this challenge, you'll build a toy Redis clone that's capable of handling
-basic commands like `PING`, `SET` and `GET`. Along the way we'll learn about
-event loops, the Redis protocol and more.
+---
 
-**Note**: If you're viewing this repo on GitHub, head over to
-[codecrafters.io](https://codecrafters.io) to try the challenge.
+### String Commands
 
-# Passing the first stage
+- `SET key value [PX milliseconds]`
+- `GET key`
+- `DEL key`
+- `INCR key`
 
-The entry point for your Redis implementation is in `src/Server.cpp`. Study and
-uncomment the relevant code, and push your changes to pass the first stage:
+### List Commands
 
-```sh
-git commit -am "pass 1st stage" # any msg
-git push origin master
+- `RPUSH key value [value ...]`
+- `LPUSH key value [value ...]`
+- `LPOP key [count]`
+- `RPOP key`
+- `LLEN key`
+- `LRANGE key start stop`
+- `BLPOP key timeout`
+- `BRPOP key timeout`
+
+### Transaction Commands
+
+- `MULTI`
+- `EXEC`
+- `DISCARD`
+
+### Stream Commands
+
+- `XADD stream *|id field value [field value ...]`
+- `XREAD [BLOCK ms] STREAMS key id [key2 id2 ...]`
+- `XRANGE key start end`
+
+### Utility Commands
+
+- `PING`
+- `ECHO message`
+- `TYPE key`
+
+---
+
+### Prerequisites
+
+- `cmake` installed
+- C++ compiler (e.g., `g++`)
+- Unix-like system (Linux/macOS recommended)
+- Installing vcpkg package
+```
+git clone https://github.com/microsoft/vcpkg.git
+```
+- Installing redis, so we can use redis-cli
+```
+brew install redis
 ```
 
-That's all!
+---
 
-# Stage 2 & beyond
+### Start the Server
 
-Note: This section is for stages 2 and beyond.
+```bash
+./your_program.sh
+```
 
-1. Ensure you have `cmake` installed locally
-1. Run `./your_program.sh` to run your Redis server, which is implemented in
-   `src/Server.cpp`.
-1. Commit your changes and run `git push origin master` to submit your solution
-   to CodeCrafters. Test output will be streamed to your terminal.
+### Connect from Client
+
+```bash
+redis-cli
+PING
+```
+
+

@@ -44,8 +44,6 @@ unordered_map<int, string> sendToBlocked;
 queue<pair<int, string>> streamQueue;
 
 void buildEntry(string& response, const vector<string>& tokens, string stream_key, long long cur_ms, int cur_ver) {
-    // build entry
-
     unordered_map<string, string> new_entry;
     string new_stream_key = to_string(cur_ms) + "-" + to_string(cur_ver);
 
@@ -54,9 +52,7 @@ void buildEntry(string& response, const vector<string>& tokens, string stream_ke
         new_entry[tokens[i]] = tokens[i + 1];
     }
 
-    // append to stream
-    streamMap[stream_key].push_back(move(new_entry));
-
+    streamMap[stream_key].push_back(std::move(new_entry));
     response = resp_bulk_string(new_stream_key);
 }
 
@@ -447,8 +443,6 @@ void parse_redis_command(char* buffer, int client_fd) {
     else {
         redisCommands(tokens, client_fd, response);
     }
-
-    //cout << "response: " << response << "\n";
 
     send(client_fd, response.c_str(), response.size(), 0);
     return;
