@@ -68,7 +68,14 @@ brew install redis
 
 ```bash
 redis-cli
-PING
 ```
+
+### Example
+
+<img width="475" height="387" alt="image" src="https://github.com/user-attachments/assets/1b6a5896-82ef-4465-8785-013cba8c8531" />
+
+<img width="518" height="182" alt="image" src="https://github.com/user-attachments/assets/8ea73a04-9e02-4fa5-b9fb-bda24dd6a340" />
+
+
 
 
